@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character Sheets — Depths Below</title>
+<title>Characters — DUNGEONPUNX</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .chars-container { padding: 1.5rem; flex: 1; }
@@ -97,11 +97,13 @@
 </head>
 <body>
 <nav>
-  <a href="index.html" class="nav-brand">⚔ Depths Below</a>
+  <a href="index.html" class="nav-brand">⚔ DUNGEONPUNX</a>
   <a href="index.html">Adventure</a>
   <a href="characters.html" class="active">Characters</a>
   <a href="map.html">Map</a>
   <a href="rooms.html">Room Editor</a>
+  <a href="monsters.html">Monsters</a>
+  <a href="import.html">Import Module</a>
 </nav>
 
 <div class="chars-container">
@@ -154,6 +156,10 @@
       <div class="form-group"><label>Armor Class</label><input type="number" id="f_ac" min="1" value="10"></div>
       <div class="form-group"><label>Speed (ft)</label><input type="number" id="f_speed" min="0" value="30"></div>
       <div class="form-group"><label>Initiative</label><input type="number" id="f_initiative" value="0"></div>
+      <div class="form-group" style="display:flex;align-items:center;gap:0.75rem;padding-top:1.2rem">
+        <input type="checkbox" id="f_inspiration" style="width:auto;accent-color:var(--gold-bright);width:18px;height:18px">
+        <label for="f_inspiration" style="display:inline;font-size:0.82rem;color:var(--parchment);text-transform:none;letter-spacing:0;cursor:pointer">✦ Has Inspiration Token</label>
+      </div>
     </div>
 
     <hr class="divider">
@@ -176,8 +182,23 @@
   </div>
 </div>
 
+<!-- INSPIRATION MODAL -->
+<div id="inspirationModal" class="modal-overlay" style="display:none" data-char-id="">
+  <div class="modal-box" style="max-width:400px">
+    <div style="font-size:2.5rem;margin-bottom:0.75rem;animation:torchFlicker 2s infinite">✦</div>
+    <h2>Inspiration</h2>
+    <p style="font-size:0.95rem;margin-bottom:0.5rem"><span id="inspModalName" style="color:var(--gold)"></span> has an Inspiration token!</p>
+    <p style="font-size:0.85rem;color:var(--stone-light);margin-bottom:1.25rem">Spend it to roll a d20 with advantage — take the higher of two rolls.</p>
+    <div id="inspModalResult"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
+      <button id="useInspirationBtn" class="btn btn-success" onclick="rollWithAdvantage()">🎲 Roll with Advantage</button>
+      <button id="closeInspirationBtn" class="btn" onclick="closeInspirationModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <footer>
-  <span>Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span> &nbsp;·&nbsp; <a href="thanks.html" class="copyright" title="">©</a></span>
+    <span><a href="thanks.html" class="copyright" title="">©</a>&nbsp; Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span></span>
 </footer>
 
 <script src="engine.js"></script>
@@ -262,6 +283,7 @@ function renderChars() {
           <div class="char-meta">${c.race} ${c.class} · Level ${c.level} · ${c.alignment || ''}</div>
         </div>
         <div class="char-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-sm" onclick="toggleInspiration('${c.id}', event)" style="border-color:${c.inspiration?'var(--gold-bright)':'rgba(201,162,39,0.3)'};color:${c.inspiration?'var(--gold-bright)':'var(--stone-light)'};background:${c.inspiration?'rgba(241,196,15,0.15)':'transparent'}" title="${c.inspiration?'Has Inspiration — Click to use':'Grant Inspiration'}">✦ ${c.inspiration?'Inspired':'Inspire'}</button>
           <button class="btn btn-sm" onclick="openEditChar('${c.id}')">Edit</button>
           <button class="btn btn-sm btn-danger" onclick="deleteChar('${c.id}')">✕</button>
         </div>
@@ -273,6 +295,7 @@ function renderChars() {
         <div class="vital"><div class="vital-label">Speed</div><div class="vital-val">${c.speed}ft</div></div>
         <div class="vital"><div class="vital-label">Prof</div><div class="vital-val">+${E.D5E.proficiencyBonus(c.level)}</div></div>
         <div class="vital"><div class="vital-label">Init</div><div class="vital-val">${c.initiative >= 0 ? '+' : ''}${c.initiative}</div></div>
+        ${c.inspiration ? `<div class="vital"><div class="vital-label" style="color:var(--gold)">Inspo</div><div class="vital-val" style="color:var(--gold-bright);animation:torchFlicker 2s infinite">✦</div></div>` : ''}
       </div>
 
       <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${hpPct}%;background:${hpPct>50?'linear-gradient(90deg,#1a6b3a,#27ae60)':hpPct>25?'linear-gradient(90deg,#8b6914,#c9a227)':'linear-gradient(90deg,#5a0a0a,#c0392b)'}"></div></div>
@@ -330,6 +353,7 @@ function clearForm() {
   document.getElementById('f_ac').value = 10;
   document.getElementById('f_speed').value = 30;
   document.getElementById('f_initiative').value = 0;
+  document.getElementById('f_inspiration').checked = false;
   document.getElementById('f_inventory').value = '';
   document.getElementById('f_notes').value = '';
   E.D5E.abilityScores.forEach(ab => { document.getElementById(`ab_${ab}`).value = 10; });
@@ -353,6 +377,7 @@ function populateForm(char) {
   document.getElementById('f_ac').value = char.ac || 10;
   document.getElementById('f_speed').value = char.speed || 30;
   document.getElementById('f_initiative').value = char.initiative || 0;
+  document.getElementById('f_inspiration').checked = char.inspiration || false;
   document.getElementById('f_inventory').value = (char.inventory || []).join('\n');
   document.getElementById('f_notes').value = char.notes || '';
   E.D5E.abilityScores.forEach(ab => {
@@ -393,6 +418,7 @@ function saveChar() {
     ac: parseInt(document.getElementById('f_ac').value) || 10,
     speed: parseInt(document.getElementById('f_speed').value) || 30,
     initiative: parseInt(document.getElementById('f_initiative').value) || 0,
+    inspiration: document.getElementById('f_inspiration').checked,
     proficiencyBonus: E.D5E.proficiencyBonus(level),
     abilities,
     savingThrows,
@@ -412,6 +438,80 @@ function saveChar() {
   }
   E.saveCharacters(chars);
   closeSheetModal();
+  renderChars();
+}
+
+function toggleInspiration(id, event) {
+  event.stopPropagation();
+  const chars = E.getCharacters();
+  const char = chars.find(c => c.id === id);
+  if (!char) return;
+
+  if (char.inspiration) {
+    // Has inspiration — offer to use it for advantage roll
+    showAdvantageModal(id);
+  } else {
+    // Grant inspiration
+    char.inspiration = true;
+    E.saveCharacters(chars);
+    renderChars();
+  }
+}
+
+function showAdvantageModal(charId) {
+  const chars = E.getCharacters();
+  const char = chars.find(c => c.id === charId);
+  if (!char) return;
+
+  const modal = document.getElementById('inspirationModal');
+  document.getElementById('inspModalName').textContent = char.name;
+  document.getElementById('inspModalResult').innerHTML = '';
+  modal.style.display = 'flex';
+  modal.dataset.charId = charId;
+}
+
+function rollWithAdvantage() {
+  const roll1 = Math.floor(Math.random() * 20) + 1;
+  const roll2 = Math.floor(Math.random() * 20) + 1;
+  const best = Math.max(roll1, roll2);
+  const result = document.getElementById('inspModalResult');
+  result.innerHTML = `
+    <div style="font-family:'Cinzel',serif;margin:1rem 0">
+      <div style="display:flex;gap:1.5rem;justify-content:center;align-items:center;margin-bottom:0.75rem">
+        <div style="text-align:center">
+          <div style="font-size:0.7rem;color:var(--stone-light);letter-spacing:0.1em;margin-bottom:0.3rem">ROLL 1</div>
+          <div style="font-size:2.2rem;color:${roll1===best?'var(--gold-bright)':'var(--stone-light)'};">${roll1}</div>
+        </div>
+        <div style="color:var(--stone-light);font-size:1.2rem">vs</div>
+        <div style="text-align:center">
+          <div style="font-size:0.7rem;color:var(--stone-light);letter-spacing:0.1em;margin-bottom:0.3rem">ROLL 2</div>
+          <div style="font-size:2.2rem;color:${roll2===best?'var(--gold-bright)':'var(--stone-light)'};">${roll2}</div>
+        </div>
+      </div>
+      <div style="font-size:0.75rem;color:var(--stone-light);margin-bottom:0.5rem">RESULT</div>
+      <div style="font-size:3rem;color:var(--gold);text-shadow:0 0 20px rgba(201,162,39,0.6)">${best}</div>
+      ${best === 20 ? '<div style="color:var(--gold-bright);font-size:0.9rem;margin-top:0.5rem;animation:torchFlicker 1s infinite">⚡ NATURAL 20!</div>' : ''}
+    </div>
+  `;
+  // Spend the inspiration
+  const chars = E.getCharacters();
+  const char = chars.find(c => c.id === document.getElementById('inspirationModal').dataset.charId);
+  if (char) { char.inspiration = false; E.saveCharacters(chars); }
+  document.getElementById('useInspirationBtn').textContent = 'Roll Again';
+  document.getElementById('closeInspirationBtn').textContent = 'Done';
+  renderChars();
+}
+
+function grantInspiration(charId) {
+  const chars = E.getCharacters();
+  const char = chars.find(c => c.id === charId);
+  if (char) { char.inspiration = true; E.saveCharacters(chars); }
+  closeInspirationModal();
+  renderChars();
+}
+
+function closeInspirationModal() {
+  document.getElementById('inspirationModal').style.display = 'none';
   renderChars();
 }
 
