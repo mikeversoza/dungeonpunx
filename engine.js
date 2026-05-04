@@ -13,7 +13,7 @@ const DungeonEngine = (() => {
 
   // ---- AUTH ----
   const AUTH = {
-    PASSWORD: 'dungeon2024',
+    PASSWORD: 'DHwhars.0923',
     check: () => STORE.get('auth') === true,
     login: (pw) => { if (pw === AUTH.PASSWORD) { STORE.set('auth', true); return true; } return false; },
     logout: () => STORE.del('auth')
