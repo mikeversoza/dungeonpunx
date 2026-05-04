@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You — Depths Below</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.thanks-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.thanks-body::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(201,162,39,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(139,26,26,0.06) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.thanks-box {
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+}
+
+.thanks-rune {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: torchFlicker 3s ease-in-out infinite;
+  display: block;
+}
+
+.thanks-title {
+  font-family: 'Cinzel', serif;
+  font-size: 2.8rem;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 40px rgba(201,162,39,0.5);
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.thanks-subtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--stone-light);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+}
+
+.thanks-divider {
+  width: 200px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 2rem auto;
+}
+
+.thanks-body-text {
+  font-size: 1.15rem;
+  line-height: 1.9;
+  color: var(--parchment);
+  margin-bottom: 1.5rem;
+}
+
+.thanks-credits {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(201,162,39,0.2);
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.credits-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(201,162,39,0.08);
+  font-size: 0.9rem;
+}
+.credits-row:last-child { border-bottom: none; }
+.credits-label { color: var(--stone-light); font-size: 0.8rem; font-family: 'Cinzel', serif; letter-spacing: 0.08em; text-transform: uppercase; }
+.credits-val { color: var(--parchment); }
+
+.thanks-quote {
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--stone-light);
+  line-height: 1.8;
+  padding: 1.5rem;
+  border-left: 3px solid var(--gold);
+  text-align: left;
+  margin: 2rem 0;
+}
+
+/* Floating runes background */
+.rune-float {
+  position: fixed;
+  font-size: 1.5rem;
+  opacity: 0.04;
+  pointer-events: none;
+  animation: runeFloat linear infinite;
+}
+@keyframes runeFloat {
+  from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.04; }
+  90% { opacity: 0.04; }
+  to { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+}
+
+.back-link {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-decoration: none;
+  border: 1px solid rgba(201,162,39,0.4);
+  padding: 0.6rem 1.5rem;
+  margin-top: 1rem;
+  transition: all 0.2s;
+}
+.back-link:hover { background: rgba(201,162,39,0.1); border-color: var(--gold); }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand">⚔ Depths Below</a>
+  <a href="index.html">Adventure</a>
+  <a href="characters.html">Characters</a>
+  <a href="map.html">Map</a>
+  <a href="rooms.html">Room Editor</a>
+</nav>
+
+<!-- Floating runes -->
+<div id="runeField"></div>
+
+<div class="thanks-body">
+  <div class="thanks-box fade-in">
+    <span class="thanks-rune">✦</span>
+    <h1 class="thanks-title">Thank You</h1>
+    <div class="thanks-subtitle">From the depths of our gratitude</div>
+    <div class="thanks-divider"></div>
+
+    <p class="thanks-body-text">
+      You found the hidden scroll. Whether you're a Dungeon Master weaving epic tales,
+      a player rolling the dice of fate, or simply someone who stumbled upon this secret page —
+      thank you for being here.
+    </p>
+
+    <div class="thanks-quote">
+      "Every dungeon is a story waiting to be told. Every roll of the dice is a moment of possibility.
+      May your adventures be legendary, your loot plentiful, and your party never split."
+    </div>
+
+    <div class="thanks-credits">
+      <div class="credits-row">
+        <span class="credits-label">Designed & Built By</span>
+        <span class="credits-val" style="font-family:'Cinzel',serif;color:var(--gold)">grapebiscuits</span>
+      </div>
+      <div class="credits-row">
+        <span class="credits-label">System</span>
+        <span class="credits-val">Dungeons & Dragons 5th Edition (SRD)</span>
+      </div>
+      <div class="credits-row">
+        <span class="credits-label">Purpose</span>
+        <span class="credits-val">Bringing adventurers together</span>
+      </div>
+      <div class="credits-row">
+        <span class="credits-label">Players Supported</span>
+        <span class="credits-val">1 to 6 brave souls</span>
+      </div>
+      <div class="credits-row">
+        <span class="credits-label">Year</span>
+        <span class="credits-val" id="creditsYear"></span>
+      </div>
+    </div>
+
+    <p style="color:var(--stone-light);font-size:0.9rem;line-height:1.8;font-style:italic">
+      Built with passion for tabletop gaming and the shared joy of collaborative storytelling.
+      This tool was made to enhance your game nights — whether you're playing in person
+      or across the digital void.
+    </p>
+
+    <div class="thanks-divider"></div>
+
+    <div style="font-family:'Cinzel',serif;font-size:0.8rem;color:var(--stone-light);letter-spacing:0.1em;margin-bottom:1.5rem">
+      NOW GO ROLL SOME DICE
+    </div>
+
+    <a href="index.html" class="back-link">↩ Return to the Dungeon</a>
+  </div>
+</div>
+
+<footer>
+  <span>Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span> &nbsp;·&nbsp; <a href="thanks.html" class="copyright" title="">©</a></span>
+</footer>
+
+<script>
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+document.getElementById('creditsYear').textContent = new Date().getFullYear();
+
+// Floating runes
+const runes = ['ᚠ','ᚢ','ᚦ','ᚨ','ᚱ','ᚲ','ᚷ','ᚹ','ᚺ','ᚾ','ᛁ','ᛃ','ᛇ','ᛈ','ᛉ','ᛊ','ᛏ','ᛒ','ᛖ','ᛗ','ᛚ','ᛜ','ᛞ','ᛟ'];
+const field = document.getElementById('runeField');
+for (let i = 0; i < 20; i++) {
+  const rune = document.createElement('div');
+  rune.className = 'rune-float';
+  rune.textContent = runes[Math.floor(Math.random() * runes.length)];
+  rune.style.left = Math.random() * 100 + 'vw';
+  rune.style.animationDuration = (15 + Math.random() * 20) + 's';
+  rune.style.animationDelay = (-Math.random() * 20) + 's';
+  rune.style.fontSize = (1 + Math.random() * 2) + 'rem';
+  field.appendChild(rune);
+}
+</script>
+</body>
+</html>
