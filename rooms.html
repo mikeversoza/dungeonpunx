@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Room Editor — Depths Below</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.rooms-container { padding: 1.5rem; flex: 1; }
+.rooms-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.rooms-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold); }
+
+.rooms-layout { display: grid; grid-template-columns: 1fr 420px; gap: 1.5rem; }
+
+/* Room list */
+.room-list-panel { display: flex; flex-direction: column; gap: 0; }
+.room-list-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.filter-btn {
+  font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.08em;
+  padding: 0.35rem 0.9rem; border: 1px solid rgba(201,162,39,0.3);
+  background: transparent; color: var(--stone-light); cursor: pointer;
+  transition: all 0.15s; text-transform: uppercase;
+}
+.filter-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,162,39,0.08); }
+.filter-btn:hover { color: var(--gold); }
+
+.room-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 620px; overflow-y: auto; padding-right: 0.25rem; }
+.room-list-item {
+  background: rgba(20,16,28,0.9);
+  border: 1px solid rgba(201,162,39,0.2);
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; align-items: flex-start; gap: 0.75rem;
+}
+.room-list-item:hover, .room-list-item.selected { border-color: var(--gold); background: rgba(30,24,40,0.95); }
+.room-list-item.custom-room { border-left: 3px solid var(--emerald-bright); }
+.room-list-item.default-room { border-left: 3px solid rgba(201,162,39,0.3); }
+
+.rli-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+.rli-body { flex: 1; min-width: 0; }
+.rli-name { font-family: 'Cinzel', serif; font-size: 0.88rem; color: var(--parchment); margin-bottom: 0.2rem; }
+.rli-meta { font-size: 0.75rem; color: var(--stone-light); display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.rli-desc { font-size: 0.78rem; color: var(--stone-light); font-style: italic; margin-top: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rli-actions { display: flex; flex-direction: column; gap: 0.25rem; flex-shrink: 0; }
+
+/* Editor panel */
+.editor-panel {
+  background: linear-gradient(135deg, rgba(20,16,28,0.97), rgba(14,10,20,0.99));
+  border: 1px solid rgba(201,162,39,0.3);
+  padding: 1.5rem;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+.editor-panel h2 { font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 1.25rem; }
+.form-group { margin-bottom: 0.9rem; }
+.form-group label { display: block; margin-bottom: 0.3rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+
+.puzzle-fields { display: none; background: rgba(123,104,238,0.06); border: 1px solid rgba(123,104,238,0.2); padding: 0.75rem; margin-top: 0.5rem; }
+.puzzle-fields.visible { display: block; }
+
+.type-badge {
+  display: inline-block;
+  font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.1em;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  margin-left: 0.5rem;
+}
+.empty-state { text-align: center; padding: 3rem; color: var(--stone-light); font-style: italic; }
+
+.count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px;
+  background: rgba(201,162,39,0.15); border: 1px solid rgba(201,162,39,0.3);
+  color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.7rem;
+  border-radius: 2px; margin-left: 0.4rem; padding: 0 4px;
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand">⚔ Depths Below</a>
+  <a href="index.html">Adventure</a>
+  <a href="characters.html">Characters</a>
+  <a href="map.html">Map</a>
+  <a href="rooms.html" class="active">Room Editor</a>
+</nav>
+
+<div class="rooms-container">
+  <div class="rooms-header">
+    <div>
+      <h1>Room Editor</h1>
+      <div style="color:var(--stone-light);font-style:italic;font-size:0.9rem">
+        Create and manage dungeon rooms for random selection
+        <span id="customCount" class="count-badge">0</span> custom &nbsp;
+        <span id="defaultCount" class="count-badge" style="border-color:rgba(201,162,39,0.3)">0</span> built-in
+      </div>
+    </div>
+    <button class="btn btn-success" onclick="newRoom()">+ New Room</button>
+  </div>
+
+  <div class="rooms-layout">
+    <!-- LIST -->
+    <div class="room-list-panel">
+      <div class="room-list-filters">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('combat',this)">⚔ Combat</button>
+        <button class="filter-btn" onclick="setFilter('puzzle',this)">🔮 Puzzle</button>
+        <button class="filter-btn" onclick="setFilter('treasure',this)">💰 Treasure</button>
+        <button class="filter-btn" onclick="setFilter('exploration',this)">🔍 Explore</button>
+        <button class="filter-btn" onclick="setFilter('boss',this)">💀 Boss</button>
+        <button class="filter-btn" onclick="setFilter('social',this)">💬 Social</button>
+        <button class="filter-btn" onclick="setFilter('custom',this)" style="margin-left:auto;border-color:var(--emerald-bright);color:var(--emerald-bright)">✦ Custom Only</button>
+      </div>
+      <div class="room-list" id="roomList">
+        <div class="empty-state">Loading rooms...</div>
+      </div>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="editor-panel" id="editorPanel">
+      <h2 id="editorTitle">Select or create a room</h2>
+      <div id="editorBody">
+        <div class="empty-state">
+          <div style="font-size:2.5rem;margin-bottom:0.75rem">🚪</div>
+          <p>Select a room to edit it, or create a new custom room.</p>
+          <p style="margin-top:0.5rem;font-size:0.8rem">Built-in rooms cannot be deleted, but can be viewed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span> &nbsp;·&nbsp; <a href="thanks.html" class="copyright" title="">©</a></span>
+</footer>
+
+<script src="engine.js"></script>
+<script>
+const E = DungeonEngine;
+let currentFilter = 'all';
+let editingRoomId = null;
+let isNewRoom = false;
+
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+const typeIcons = { combat:'⚔', puzzle:'🔮', treasure:'💰', exploration:'🔍', boss:'💀', social:'💬' };
+const typeColors = { combat:'var(--blood-bright)', puzzle:'#7b68ee', treasure:'var(--gold)', exploration:'var(--emerald-bright)', boss:'var(--torch)', social:'#5bc0de' };
+
+function init() {
+  if (!E.AUTH.check()) { window.location.href = 'index.html'; return; }
+  renderRoomList();
+  updateCounts();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRoomList();
+}
+
+function getAllRooms() {
+  const custom = E.getCustomRooms().map(r => ({ ...r, isCustom: true }));
+  const defaults = E.DEFAULT_ROOMS.map(r => ({ ...r, isCustom: false }));
+  return [...custom, ...defaults];
+}
+
+function renderRoomList() {
+  const all = getAllRooms();
+  let filtered = all;
+  if (currentFilter === 'custom') filtered = all.filter(r => r.isCustom);
+  else if (currentFilter !== 'all') filtered = all.filter(r => r.type === currentFilter);
+
+  const list = document.getElementById('roomList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">No rooms match this filter.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(room => `
+    <div class="room-list-item ${room.isCustom ? 'custom-room' : 'default-room'} ${editingRoomId === room.id ? 'selected' : ''}" onclick="selectRoom('${room.id}')">
+      <div class="rli-icon">${typeIcons[room.type] || '🚪'}</div>
+      <div class="rli-body">
+        <div class="rli-name">
+          ${room.name}
+          ${room.isCustom ? '<span class="type-badge" style="color:var(--emerald-bright)">custom</span>' : ''}
+          <span class="type-badge" style="color:${typeColors[room.type]}">${room.type}</span>
+        </div>
+        <div class="rli-meta">
+          <span>Lv. ${room.minLevel}–${room.maxLevel}</span>
+          ${room.exits ? `<span>${room.exits.length} exits</span>` : ''}
+          ${room.puzzle ? '<span style="color:#7b68ee">Has Puzzle</span>' : ''}
+        </div>
+        <div class="rli-desc">${room.description}</div>
+      </div>
+      <div class="rli-actions">
+        <button class="btn btn-sm" onclick="event.stopPropagation();selectRoom('${room.id}')" style="font-size:0.65rem;padding:0.2rem 0.5rem">${room.isCustom ? 'Edit' : 'View'}</button>
+        ${room.isCustom ? `<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteRoom('${room.id}')" style="font-size:0.65rem;padding:0.2rem 0.5rem">✕</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateCounts() {
+  document.getElementById('customCount').textContent = E.getCustomRooms().length;
+  document.getElementById('defaultCount').textContent = E.DEFAULT_ROOMS.length;
+}
+
+function selectRoom(id) {
+  editingRoomId = id;
+  isNewRoom = false;
+  const all = getAllRooms();
+  const room = all.find(r => r.id === id);
+  if (!room) return;
+  renderRoomList();
+  renderEditor(room, !room.isCustom);
+}
+
+function newRoom() {
+  editingRoomId = null;
+  isNewRoom = true;
+  renderEditor(null, false);
+}
+
+function renderEditor(room, readOnly) {
+  const panel = document.getElementById('editorPanel');
+  const title = document.getElementById('editorTitle');
+  title.textContent = isNewRoom ? 'Create New Room' : (readOnly ? `View: ${room?.name}` : `Edit: ${room?.name}`);
+
+  const r = room || {};
+  const exits = ['north','south','east','west'];
+  const roomExits = r.exits || ['north'];
+
+  document.getElementById('editorBody').innerHTML = `
+    ${readOnly ? '<div style="background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.2);padding:0.6rem 0.9rem;font-size:0.8rem;color:var(--stone-light);margin-bottom:1rem">Built-in rooms are read-only. Duplicate to create an editable copy.</div>' : ''}
+
+    <div class="form-group">
+      <label>Room Name</label>
+      <input type="text" id="e_name" value="${r.name || ''}" placeholder="e.g. The Crypt of Shadows..." ${readOnly?'readonly':''}>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Room Type</label>
+        <select id="e_type" onchange="togglePuzzleFields()" ${readOnly?'disabled':''}>
+          ${['combat','puzzle','treasure','exploration','boss','social'].map(t =>
+            `<option value="${t}" ${r.type===t?'selected':''}>${typeIcons[t]} ${t.charAt(0).toUpperCase()+t.slice(1)}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Exits</label>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.3rem">
+          ${exits.map(ex => `
+            <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.78rem;color:var(--parchment);text-transform:none">
+              <input type="checkbox" id="ex_${ex}" ${roomExits.includes(ex)?'checked':''} ${readOnly?'disabled':''} style="width:auto;accent-color:var(--gold)">
+              ${ex.charAt(0).toUpperCase()+ex.slice(1)}
+            </label>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Min Level</label>
+        <input type="number" id="e_minLevel" min="1" max="20" value="${r.minLevel || 1}" ${readOnly?'readonly':''}>
+      </div>
+      <div class="form-group">
+        <label>Max Level</label>
+        <input type="number" id="e_maxLevel" min="1" max="20" value="${r.maxLevel || 20}" ${readOnly?'readonly':''}>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Description (shown when entering)</label>
+      <textarea id="e_desc" rows="3" placeholder="What the players see and sense..." ${readOnly?'readonly':''}>${r.description || ''}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Flavor Text (atmospheric detail)</label>
+      <textarea id="e_flavor" rows="2" placeholder="Additional atmospheric detail..." ${readOnly?'readonly':''}>${r.flavor || ''}</textarea>
+    </div>
+
+    <div id="puzzleFields" class="puzzle-fields ${r.type==='puzzle'?'visible':''}">
+      <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:#7b68ee;margin-bottom:0.75rem;letter-spacing:0.08em">PUZZLE CONFIGURATION</div>
+      <div class="form-group">
+        <label>Riddle / Puzzle Question</label>
+        <textarea id="e_pQuestion" rows="2" placeholder="The players must solve..." ${readOnly?'readonly':''}>${r.puzzle?.question || ''}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Answer (case-insensitive)</label>
+        <input type="text" id="e_pAnswer" value="${r.puzzle?.answer || ''}" placeholder="correct answer..." ${readOnly?'readonly':''}>
+      </div>
+      <div class="form-group">
+        <label>Hint</label>
+        <input type="text" id="e_pHint" value="${r.puzzle?.hint || ''}" placeholder="A clue to guide players..." ${readOnly?'readonly':''}>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Failure Trap Damage</label>
+          <input type="text" id="e_pDamage" value="${r.puzzle?.failureTrap?.damage || '2d6'}" placeholder="e.g. 2d6" ${readOnly?'readonly':''}>
+        </div>
+        <div class="form-group">
+          <label>Damage Type</label>
+          <input type="text" id="e_pDmgType" value="${r.puzzle?.failureTrap?.type || 'fire'}" placeholder="e.g. fire, cold..." ${readOnly?'readonly':''}>
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:0.5rem;color:var(--parchment);text-transform:none;font-size:0.85rem">
+        <input type="checkbox" id="e_pSuccessLoot" ${r.puzzle?.successLoot?'checked':''} ${readOnly?'disabled':''} style="width:auto;accent-color:var(--gold)">
+        Award loot on success
+      </label>
+    </div>
+
+    ${!readOnly ? `
+    <div style="display:flex;gap:0.75rem;margin-top:1.25rem;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="saveRoom()" style="flex:1">💾 Save Room</button>
+      <button class="btn" onclick="cancelEdit()">Cancel</button>
+    </div>` : `
+    <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
+      <button class="btn btn-success" onclick="duplicateRoom('${r.id}')" style="flex:1">Duplicate & Edit</button>
+    </div>`}
+  `;
+}
+
+function togglePuzzleFields() {
+  const type = document.getElementById('e_type')?.value;
+  const pf = document.getElementById('puzzleFields');
+  if (pf) pf.classList.toggle('visible', type === 'puzzle');
+}
+
+function saveRoom() {
+  const name = document.getElementById('e_name').value.trim();
+  if (!name) { alert('Room name is required.'); return; }
+
+  const type = document.getElementById('e_type').value;
+  const exits = ['north','south','east','west'].filter(ex => document.getElementById(`ex_${ex}`)?.checked);
+  if (!exits.length) exits.push('north');
+
+  const roomData = {
+    id: editingRoomId || ('custom_' + Date.now()),
+    name,
+    type,
+    exits,
+    minLevel: parseInt(document.getElementById('e_minLevel').value) || 1,
+    maxLevel: parseInt(document.getElementById('e_maxLevel').value) || 20,
+    description: document.getElementById('e_desc').value.trim(),
+    flavor: document.getElementById('e_flavor').value.trim(),
+  };
+
+  if (type === 'puzzle') {
+    const q = document.getElementById('e_pQuestion').value.trim();
+    const a = document.getElementById('e_pAnswer').value.trim();
+    if (q && a) {
+      roomData.puzzle = {
+        question: q,
+        answer: a,
+        hint: document.getElementById('e_pHint').value.trim(),
+        successLoot: document.getElementById('e_pSuccessLoot').checked,
+        failureTrap: {
+          damage: document.getElementById('e_pDamage').value.trim() || '2d6',
+          type: document.getElementById('e_pDmgType').value.trim() || 'fire',
+          save: 'DEX DC 13'
+        }
+      };
+    }
+  }
+
+  const customs = E.getCustomRooms();
+  if (editingRoomId && !isNewRoom) {
+    const idx = customs.findIndex(r => r.id === editingRoomId);
+    if (idx >= 0) customs[idx] = roomData;
+    else customs.push(roomData);
+  } else {
+    customs.push(roomData);
+  }
+
+  E.saveCustomRooms(customs);
+  editingRoomId = roomData.id;
+  isNewRoom = false;
+  renderRoomList();
+  updateCounts();
+
+  // Show success feedback
+  const btn = document.querySelector('.editor-panel .btn-success');
+  if (btn) { btn.textContent = '✓ Saved!'; btn.style.borderColor = 'var(--emerald-bright)'; setTimeout(() => { btn.textContent = '💾 Save Room'; btn.style.borderColor = ''; }, 1500); }
+}
+
+function deleteRoom(id) {
+  if (!confirm('Delete this custom room permanently?')) return;
+  const customs = E.getCustomRooms().filter(r => r.id !== id);
+  E.saveCustomRooms(customs);
+  if (editingRoomId === id) { editingRoomId = null; document.getElementById('editorBody').innerHTML = '<div class="empty-state">Room deleted. Select another or create new.</div>'; }
+  renderRoomList();
+  updateCounts();
+}
+
+function duplicateRoom(id) {
+  const all = getAllRooms();
+  const room = all.find(r => r.id === id);
+  if (!room) return;
+  const dup = { ...room, id: 'custom_' + Date.now(), name: room.name + ' (Copy)', isCustom: true };
+  const customs = E.getCustomRooms();
+  customs.push(dup);
+  E.saveCustomRooms(customs);
+  editingRoomId = dup.id;
+  isNewRoom = false;
+  renderRoomList();
+  updateCounts();
+  renderEditor(dup, false);
+}
+
+function cancelEdit() {
+  editingRoomId = null;
+  isNewRoom = false;
+  renderRoomList();
+  document.getElementById('editorTitle').textContent = 'Select or create a room';
+  document.getElementById('editorBody').innerHTML = '<div class="empty-state"><div style="font-size:2.5rem;margin-bottom:0.75rem">🚪</div><p>Select a room to edit it, or create a new custom room.</p></div>';
+}
+
+init();
+</script>
+</body>
+</html>
