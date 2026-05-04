@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monsters — DUNGEONPUNX</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.monsters-container { padding: 1.5rem; flex: 1; }
+.monsters-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.monsters-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold); }
+
+.monsters-layout { display: grid; grid-template-columns: 1fr 440px; gap: 1.5rem; }
+
+/* Filter / list */
+.monster-list-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+.filter-btn {
+  font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.08em;
+  padding: 0.35rem 0.9rem; border: 1px solid rgba(201,162,39,0.3);
+  background: transparent; color: var(--stone-light); cursor: pointer;
+  transition: all 0.15s; text-transform: uppercase;
+}
+.filter-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,162,39,0.08); }
+.filter-btn:hover { color: var(--gold); }
+
+.search-box {
+  flex: 1; min-width: 160px; max-width: 280px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(201,162,39,0.25);
+  color: var(--parchment);
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 2px; outline: none;
+}
+.search-box:focus { border-color: var(--gold); }
+
+.monster-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 680px; overflow-y: auto; padding-right: 0.25rem; }
+
+.monster-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: rgba(20,16,28,0.9);
+  border: 1px solid rgba(201,162,39,0.18);
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.monster-item:hover, .monster-item.selected { border-color: var(--gold); background: rgba(30,24,40,0.97); }
+.monster-item.custom-monster { border-left: 3px solid var(--emerald-bright); }
+.monster-item.default-monster { border-left: 3px solid rgba(201,162,39,0.3); }
+.monster-item.boss-type { border-left: 3px solid var(--blood-bright); }
+
+.mi-cr {
+  font-family: 'Cinzel', serif; font-size: 0.7rem;
+  width: 36px; text-align: center; flex-shrink: 0;
+  color: var(--gold); background: rgba(201,162,39,0.08);
+  border: 1px solid rgba(201,162,39,0.2);
+  padding: 0.2rem 0.1rem;
+}
+.mi-name { font-family: 'Cinzel', serif; font-size: 0.88rem; color: var(--parchment); flex: 1; }
+.mi-meta { font-size: 0.72rem; color: var(--stone-light); }
+.mi-stats { font-size: 0.72rem; color: var(--stone-light); text-align: right; flex-shrink: 0; }
+.mi-actions { display: flex; gap: 0.25rem; flex-shrink: 0; }
+
+/* Editor */
+.editor-panel {
+  background: linear-gradient(135deg, rgba(20,16,28,0.97), rgba(14,10,20,0.99));
+  border: 1px solid rgba(201,162,39,0.3);
+  padding: 1.5rem;
+  position: sticky; top: 1rem;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+.editor-panel h2 { font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 1.25rem; }
+.form-group { margin-bottom: 0.85rem; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.6rem; }
+.form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.6rem; }
+
+.stat-section {
+  background: rgba(139,26,26,0.06);
+  border: 1px solid rgba(139,26,26,0.2);
+  padding: 0.9rem;
+  margin-bottom: 0.85rem;
+}
+.stat-section-title {
+  font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--blood-bright);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem;
+}
+
+.action-block {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(201,162,39,0.15);
+  padding: 0.7rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+.action-block .remove-action {
+  position: absolute; top: 0.4rem; right: 0.4rem;
+  background: none; border: none; color: var(--blood-bright);
+  cursor: pointer; font-size: 0.85rem; padding: 0;
+  font-family: 'Cinzel', serif;
+}
+
+.cr-badge {
+  display: inline-block;
+  font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.1em;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--blood-bright); color: var(--blood-bright);
+  text-transform: uppercase; margin-left: 0.4rem;
+}
+
+.count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px;
+  background: rgba(201,162,39,0.15); border: 1px solid rgba(201,162,39,0.3);
+  color: var(--gold); font-family: 'Cinzel', serif; font-size: 0.7rem;
+  border-radius: 2px; margin-left: 0.4rem; padding: 0 4px;
+}
+
+.xp-hint { font-size: 0.72rem; color: var(--stone-light); margin-top: 0.2rem; font-style: italic; }
+
+.empty-state { text-align: center; padding: 3rem; color: var(--stone-light); font-style: italic; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand">⚔ DUNGEONPUNX</a>
+  <a href="index.html">Adventure</a>
+  <a href="characters.html">Characters</a>
+  <a href="map.html">Map</a>
+  <a href="rooms.html">Room Editor</a>
+  <a href="monsters.html" class="active">Monsters</a>
+  <a href="import.html">Import Module</a>
+</nav>
+
+<div class="monsters-container">
+  <div class="monsters-header">
+    <div>
+      <h1>Monsters &amp; Bosses</h1>
+      <div style="color:var(--stone-light);font-style:italic;font-size:0.9rem">
+        Manage the creatures that lurk in the dark
+        <span id="customCount" class="count-badge">0</span> custom &nbsp;
+        <span id="defaultCount" class="count-badge" style="border-color:rgba(201,162,39,0.3)">0</span> built-in
+      </div>
+    </div>
+    <button class="btn btn-success" onclick="newMonster()">+ New Monster</button>
+  </div>
+
+  <div class="monsters-layout">
+    <!-- LIST -->
+    <div>
+      <div class="monster-list-filters">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('humanoid',this)">Humanoid</button>
+        <button class="filter-btn" onclick="setFilter('undead',this)">Undead</button>
+        <button class="filter-btn" onclick="setFilter('beast',this)">Beast</button>
+        <button class="filter-btn" onclick="setFilter('dragon',this)">Dragon</button>
+        <button class="filter-btn" onclick="setFilter('fiend',this)">Fiend</button>
+        <button class="filter-btn" onclick="setFilter('aberration',this)">Aberration</button>
+        <button class="filter-btn" onclick="setFilter('boss',this)" style="border-color:var(--blood-bright);color:var(--blood-bright)">☠ Boss</button>
+        <button class="filter-btn" onclick="setFilter('custom',this)" style="margin-left:auto;border-color:var(--emerald-bright);color:var(--emerald-bright)">✦ Custom</button>
+        <input class="search-box" type="text" id="searchBox" placeholder="Search monsters..." oninput="renderMonsterList()">
+      </div>
+      <div class="monster-list" id="monsterList">
+        <div class="empty-state">Loading monsters...</div>
+      </div>
+    </div>
+
+    <!-- EDITOR -->
+    <div class="editor-panel" id="editorPanel">
+      <h2 id="editorTitle">Select or create a monster</h2>
+      <div id="editorBody">
+        <div class="empty-state">
+          <div style="font-size:2.5rem;margin-bottom:0.75rem">☠</div>
+          <p>Select a monster to view or edit it,<br>or create a new custom creature.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span><a href="thanks.html" class="copyright" title="">©</a>&nbsp; Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span></span>
+</footer>
+
+<script src="engine.js"></script>
+<script>
+const E = DungeonEngine;
+let currentFilter = 'all';
+let editingMonsterId = null;
+let isNew = false;
+let actionCount = 0;
+
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+// ---- CR to XP reference ----
+const crXP = {
+  '0':10,'1/8':25,'1/4':50,'1/2':100,'1':200,'2':450,'3':700,'4':1100,
+  '5':1800,'6':2300,'7':2900,'8':3900,'9':5000,'10':5900,'11':7200,'12':8400,
+  '13':10000,'14':11500,'15':13000,'16':15000,'17':18000,'18':20000,
+  '19':22000,'20':25000,'21':33000,'22':41000,'23':50000,'24':62000,
+  '25':75000,'26':90000,'27':105000,'28':120000,'29':135000,'30':155000
+};
+
+function getCustomMonsters() { return E.STORE.get('customMonsters') || []; }
+function saveCustomMonsters(m) { E.STORE.set('customMonsters', m); }
+
+function getAllMonsters() {
+  const custom = getCustomMonsters().map(m => ({...m, isCustom: true}));
+  const defaults = E.D5E.monsters.map(m => ({...m, isCustom: false}));
+  return [...custom, ...defaults];
+}
+
+function init() {
+  if (!E.AUTH.check()) { window.location.href = 'index.html'; return; }
+  renderMonsterList();
+  updateCounts();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMonsterList();
+}
+
+function renderMonsterList() {
+  const all = getAllMonsters();
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  let filtered = all;
+
+  if (currentFilter === 'custom') filtered = filtered.filter(m => m.isCustom);
+  else if (currentFilter === 'boss') filtered = filtered.filter(m => m.isBoss || m.cr >= 10 || parseInt(m.cr) >= 10);
+  else if (currentFilter !== 'all') filtered = filtered.filter(m => m.type === currentFilter);
+
+  if (search) filtered = filtered.filter(m =>
+    m.name.toLowerCase().includes(search) ||
+    (m.type||'').toLowerCase().includes(search)
+  );
+
+  // Sort by CR numerically
+  const crVal = cr => { if (cr === '1/8') return 0.125; if (cr === '1/4') return 0.25; if (cr === '1/2') return 0.5; return parseFloat(cr) || 0; };
+  filtered.sort((a, b) => crVal(a.cr) - crVal(b.cr));
+
+  const list = document.getElementById('monsterList');
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state">No monsters match this filter.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(m => `
+    <div class="monster-item ${m.isCustom ? 'custom-monster' : 'default-monster'} ${m.isBoss ? 'boss-type' : ''} ${editingMonsterId === m.id ? 'selected' : ''}"
+         onclick="selectMonster('${m.id}', ${m.isCustom})">
+      <div class="mi-cr">CR<br>${m.cr}</div>
+      <div style="flex:1;min-width:0">
+        <div class="mi-name">
+          ${m.name}
+          ${m.isBoss ? '<span class="cr-badge">Boss</span>' : ''}
+          ${m.isCustom ? '<span style="font-size:0.6rem;color:var(--emerald-bright);border:1px solid currentColor;padding:1px 4px;margin-left:4px">Custom</span>' : ''}
+        </div>
+        <div class="mi-meta">${m.size||'Medium'} ${m.type||'humanoid'} · AC ${m.ac} · HP ${m.hp}</div>
+      </div>
+      <div class="mi-stats">
+        <div style="color:var(--blood-bright)">${m.attack} atk</div>
+        <div>${m.damage}</div>
+        <div style="color:var(--gold)">${m.xp} XP</div>
+      </div>
+      <div class="mi-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm" onclick="selectMonster('${m.id}', ${m.isCustom})" style="font-size:0.65rem;padding:0.2rem 0.5rem">${m.isCustom ? 'Edit' : 'View'}</button>
+        ${m.isCustom ? `<button class="btn btn-sm btn-danger" onclick="deleteMonster('${m.id}')" style="font-size:0.65rem;padding:0.2rem 0.5rem">✕</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateCounts() {
+  document.getElementById('customCount').textContent = getCustomMonsters().length;
+  document.getElementById('defaultCount').textContent = E.D5E.monsters.length;
+}
+
+function selectMonster(id, isCustom) {
+  editingMonsterId = id;
+  isNew = false;
+  const all = getAllMonsters();
+  const monster = all.find(m => m.id === id);
+  if (!monster) return;
+  renderMonsterList();
+  renderEditor(monster, !isCustom);
+}
+
+function newMonster() {
+  editingMonsterId = null;
+  isNew = true;
+  renderEditor(null, false);
+  document.getElementById('editorTitle').textContent = 'New Monster';
+}
+
+function renderEditor(m, readOnly) {
+  const r = m || {};
+  document.getElementById('editorTitle').textContent = isNew ? 'New Monster' : (readOnly ? `View: ${r.name}` : `Edit: ${r.name}`);
+
+  // Build actions HTML
+  const actions = r.actions || [];
+
+  document.getElementById('editorBody').innerHTML = `
+    ${readOnly ? '<div style="background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.2);padding:0.6rem 0.9rem;font-size:0.8rem;color:var(--stone-light);margin-bottom:1rem">Built-in monsters are read-only. Duplicate to create an editable copy.</div>' : ''}
+
+    <div class="form-row" style="margin-bottom:0.85rem">
+      <div class="form-group">
+        <label>Monster Name</label>
+        <input type="text" id="e_name" value="${r.name||''}" placeholder="e.g. Shadow Drake..." ${readOnly?'readonly':''}>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="e_type" ${readOnly?'disabled':''}>
+          ${['humanoid','undead','beast','dragon','fiend','aberration','construct','monstrosity','ooze','plant','elemental','celestial','giant','fey'].map(t =>
+            `<option ${r.type===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row-3" style="margin-bottom:0.85rem">
+      <div class="form-group">
+        <label>Size</label>
+        <select id="e_size" ${readOnly?'disabled':''}>
+          ${['Tiny','Small','Medium','Large','Huge','Gargantuan'].map(s =>
+            `<option ${r.size===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>CR</label>
+        <select id="e_cr" onchange="updateXPHint()" ${readOnly?'disabled':''}>
+          ${['0','1/8','1/4','1/2','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'].map(cr =>
+            `<option ${r.cr===cr?'selected':''}>${cr}</option>`).join('')}
+        </select>
+        <div class="xp-hint" id="xpHint">XP: ${crXP[r.cr||'1']||200}</div>
+      </div>
+      <div class="form-group">
+        <label>Alignment</label>
+        <select id="e_alignment" ${readOnly?'disabled':''}>
+          ${['Unaligned','Chaotic Evil','Neutral Evil','Lawful Evil','Chaotic Neutral','True Neutral','Lawful Neutral','Chaotic Good','Neutral Good','Lawful Good','Any'].map(a =>
+            `<option ${r.alignment===a?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:0.75rem;text-transform:none;font-size:0.82rem;color:var(--parchment)">
+        <input type="checkbox" id="e_isBoss" ${r.isBoss?'checked':''} ${readOnly?'disabled':''} style="width:auto;accent-color:var(--blood-bright)">
+        <span style="font-family:'Cinzel',serif;font-size:0.72rem;color:var(--blood-bright);text-transform:uppercase;letter-spacing:0.08em">☠ Boss Monster</span>
+      </label>
+    </div>
+
+    <div class="stat-section">
+      <div class="stat-section-title">Combat Stats</div>
+      <div class="form-row" style="margin-bottom:0.6rem">
+        <div class="form-group" style="margin:0">
+          <label>Hit Points</label>
+          <input type="number" id="e_hp" min="1" value="${r.hp||10}" ${readOnly?'readonly':''}>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Armor Class</label>
+          <input type="number" id="e_ac" min="1" value="${r.ac||10}" ${readOnly?'readonly':''}>
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:0.6rem">
+        <div class="form-group" style="margin:0">
+          <label>Attack Bonus</label>
+          <input type="text" id="e_attack" value="${r.attack||'+3'}" placeholder="+4" ${readOnly?'readonly':''}>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Damage Dice</label>
+          <input type="text" id="e_damage" value="${r.damage||'1d6+2'}" placeholder="2d6+3" ${readOnly?'readonly':''}>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin:0">
+          <label>Speed</label>
+          <input type="text" id="e_speed" value="${r.speed||'30 ft.'}" placeholder="30 ft." ${readOnly?'readonly':''}>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>XP Award</label>
+          <input type="number" id="e_xp" value="${r.xp||200}" ${readOnly?'readonly':''}>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-family:'Cinzel',serif;font-size:0.72rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.6rem">Ability Scores</div>
+    <div class="form-row-3" style="margin-bottom:0.85rem">
+      ${['STR','DEX','CON','INT','WIS','CHA'].map((ab,i) => {
+        const key = ['str','dex','con','int','wis','cha'][i];
+        return `<div class="form-group" style="margin:0;text-align:center">
+          <label>${ab}</label>
+          <input type="number" id="e_${key}" min="1" max="30" value="${r[key]||10}" ${readOnly?'readonly':''} style="text-align:center">
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="form-group">
+      <label>Saving Throw Proficiencies</label>
+      <input type="text" id="e_saves" value="${r.saves||''}" placeholder="e.g. Str +6, Con +8" ${readOnly?'readonly':''}>
+    </div>
+    <div class="form-group">
+      <label>Skills</label>
+      <input type="text" id="e_skills" value="${r.skills||''}" placeholder="e.g. Perception +5, Stealth +7" ${readOnly?'readonly':''}>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Damage Immunities</label>
+        <input type="text" id="e_immunities" value="${r.immunities||''}" placeholder="e.g. fire, poison" ${readOnly?'readonly':''}>
+      </div>
+      <div class="form-group">
+        <label>Condition Immunities</label>
+        <input type="text" id="e_condImm" value="${r.condImm||''}" placeholder="e.g. charmed, frightened" ${readOnly?'readonly':''}>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Senses</label>
+      <input type="text" id="e_senses" value="${r.senses||''}" placeholder="e.g. darkvision 60 ft., passive Perception 13" ${readOnly?'readonly':''}>
+    </div>
+
+    <div style="font-family:'Cinzel',serif;font-size:0.72rem;color:var(--blood-bright);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.6rem;margin-top:0.5rem">Traits &amp; Special Abilities</div>
+    <div class="form-group">
+      <textarea id="e_traits" rows="2" placeholder="e.g. Magic Resistance. The creature has advantage on saving throws against spells..." ${readOnly?'readonly':''}>${r.traits||''}</textarea>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem">
+      <div style="font-family:'Cinzel',serif;font-size:0.72rem;color:var(--blood-bright);letter-spacing:0.1em;text-transform:uppercase">Actions</div>
+      ${!readOnly ? `<button class="btn btn-sm" onclick="addAction()" style="font-size:0.65rem;padding:0.2rem 0.6rem">+ Add Action</button>` : ''}
+    </div>
+    <div id="actionsContainer">
+      ${actions.length === 0 && !readOnly ? '' : ''}
+      ${actions.map((a, i) => renderActionBlock(a, i, readOnly)).join('')}
+      ${actions.length === 0 ? `<div style="font-size:0.8rem;color:var(--stone-light);font-style:italic;padding:0.5rem 0">${readOnly ? 'No special actions defined.' : 'Click + Add Action to add attacks or abilities.'}</div>` : ''}
+    </div>
+
+    <div class="form-group" style="margin-top:0.75rem">
+      <label>Legendary Actions (if any)</label>
+      <textarea id="e_legendary" rows="2" placeholder="e.g. 3 legendary actions, choosing from the following options..." ${readOnly?'readonly':''}>${r.legendary||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Lair Actions (if any)</label>
+      <textarea id="e_lair" rows="2" placeholder="e.g. On initiative count 20, the lair acts..." ${readOnly?'readonly':''}>${r.lair||''}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Description / Lore</label>
+      <textarea id="e_desc" rows="2" placeholder="Flavor text and lore..." ${readOnly?'readonly':''}>${r.description||''}</textarea>
+    </div>
+
+    ${!readOnly ? `
+    <div style="display:flex;gap:0.75rem;margin-top:1.25rem;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="saveMonster()" style="flex:1">💾 Save Monster</button>
+      <button class="btn" onclick="cancelEdit()">Cancel</button>
+    </div>` : `
+    <div style="display:flex;gap:0.75rem;margin-top:1.25rem">
+      <button class="btn btn-success" onclick="duplicateMonster('${r.id}')" style="flex:1">Duplicate &amp; Edit</button>
+    </div>`}
+  `;
+
+  actionCount = actions.length;
+  updateXPHint();
+}
+
+function renderActionBlock(action, index, readOnly) {
+  return `
+    <div class="action-block" id="action_${index}">
+      ${!readOnly ? `<button class="remove-action" onclick="removeAction(${index})">✕</button>` : ''}
+      <div class="form-row" style="margin-bottom:0.4rem">
+        <div class="form-group" style="margin:0">
+          <label>Action Name</label>
+          <input type="text" id="aname_${index}" value="${action.name||''}" placeholder="Claw Attack" ${readOnly?'readonly':''}>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Attack / Save</label>
+          <input type="text" id="aatk_${index}" value="${action.attack||''}" placeholder="+5 to hit / DC 14" ${readOnly?'readonly':''}>
+        </div>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Effect / Damage</label>
+        <input type="text" id="aeff_${index}" value="${action.effect||''}" placeholder="2d8+4 slashing damage" ${readOnly?'readonly':''}>
+      </div>
+    </div>
+  `;
+}
+
+function addAction() {
+  const container = document.getElementById('actionsContainer');
+  const div = document.createElement('div');
+  div.innerHTML = renderActionBlock({}, actionCount, false);
+  container.appendChild(div.firstElementChild);
+  actionCount++;
+  // Remove "no actions" message
+  const noMsg = container.querySelector('div[style*="font-style:italic"]');
+  if (noMsg) noMsg.remove();
+}
+
+function removeAction(index) {
+  const el = document.getElementById(`action_${index}`);
+  if (el) el.remove();
+}
+
+function updateXPHint() {
+  const cr = document.getElementById('e_cr')?.value;
+  const hint = document.getElementById('xpHint');
+  if (cr && hint) hint.textContent = 'XP: ' + (crXP[cr] || '?').toLocaleString();
+  // Auto-fill XP field
+  const xpField = document.getElementById('e_xp');
+  if (cr && xpField) xpField.value = crXP[cr] || '';
+}
+
+function collectActions() {
+  const actions = [];
+  const container = document.getElementById('actionsContainer');
+  if (!container) return actions;
+  container.querySelectorAll('.action-block').forEach(block => {
+    const idx = block.id.replace('action_','');
+    const name = document.getElementById(`aname_${idx}`)?.value?.trim();
+    const attack = document.getElementById(`aatk_${idx}`)?.value?.trim();
+    const effect = document.getElementById(`aeff_${idx}`)?.value?.trim();
+    if (name || effect) actions.push({ name: name||'Unnamed', attack, effect });
+  });
+  return actions;
+}
+
+function saveMonster() {
+  const name = document.getElementById('e_name').value.trim();
+  if (!name) { alert('Monster name is required.'); return; }
+
+  const cr = document.getElementById('e_cr').value;
+  const data = {
+    id: editingMonsterId || ('mon_' + Date.now()),
+    name,
+    type: document.getElementById('e_type').value,
+    size: document.getElementById('e_size').value,
+    cr,
+    isBoss: document.getElementById('e_isBoss').checked,
+    alignment: document.getElementById('e_alignment').value,
+    hp: parseInt(document.getElementById('e_hp').value) || 10,
+    ac: parseInt(document.getElementById('e_ac').value) || 10,
+    attack: document.getElementById('e_attack').value.trim() || '+3',
+    damage: document.getElementById('e_damage').value.trim() || '1d6+2',
+    speed: document.getElementById('e_speed').value.trim() || '30 ft.',
+    xp: parseInt(document.getElementById('e_xp').value) || crXP[cr] || 200,
+    str: parseInt(document.getElementById('e_str').value) || 10,
+    dex: parseInt(document.getElementById('e_dex').value) || 10,
+    con: parseInt(document.getElementById('e_con').value) || 10,
+    int: parseInt(document.getElementById('e_int').value) || 10,
+    wis: parseInt(document.getElementById('e_wis').value) || 10,
+    cha: parseInt(document.getElementById('e_cha').value) || 10,
+    saves: document.getElementById('e_saves').value.trim(),
+    skills: document.getElementById('e_skills').value.trim(),
+    immunities: document.getElementById('e_immunities').value.trim(),
+    condImm: document.getElementById('e_condImm').value.trim(),
+    senses: document.getElementById('e_senses').value.trim(),
+    traits: document.getElementById('e_traits').value.trim(),
+    actions: collectActions(),
+    legendary: document.getElementById('e_legendary').value.trim(),
+    lair: document.getElementById('e_lair').value.trim(),
+    description: document.getElementById('e_desc').value.trim(),
+  };
+
+  const customs = getCustomMonsters();
+  if (!isNew && editingMonsterId) {
+    const idx = customs.findIndex(m => m.id === editingMonsterId);
+    if (idx >= 0) customs[idx] = data;
+    else customs.push(data);
+  } else {
+    customs.push(data);
+    editingMonsterId = data.id;
+    isNew = false;
+  }
+
+  saveCustomMonsters(customs);
+  renderMonsterList();
+  updateCounts();
+
+  const btn = document.querySelector('.editor-panel .btn-success');
+  if (btn) {
+    btn.textContent = '✓ Saved!';
+    btn.style.borderColor = 'var(--emerald-bright)';
+    setTimeout(() => { btn.textContent = '💾 Save Monster'; btn.style.borderColor = ''; }, 1500);
+  }
+}
+
+function deleteMonster(id) {
+  if (!confirm('Delete this custom monster permanently?')) return;
+  const customs = getCustomMonsters().filter(m => m.id !== id);
+  saveCustomMonsters(customs);
+  if (editingMonsterId === id) {
+    editingMonsterId = null;
+    document.getElementById('editorTitle').textContent = 'Select or create a monster';
+    document.getElementById('editorBody').innerHTML = '<div class="empty-state">Monster deleted.</div>';
+  }
+  renderMonsterList();
+  updateCounts();
+}
+
+function duplicateMonster(id) {
+  const all = getAllMonsters();
+  const m = all.find(x => x.id === id);
+  if (!m) return;
+  const dup = { ...m, id: 'mon_' + Date.now(), name: m.name + ' (Copy)', isCustom: true };
+  const customs = getCustomMonsters();
+  customs.push(dup);
+  saveCustomMonsters(customs);
+  editingMonsterId = dup.id;
+  isNew = false;
+  renderMonsterList();
+  updateCounts();
+  renderEditor(dup, false);
+}
+
+function cancelEdit() {
+  editingMonsterId = null;
+  isNew = false;
+  renderMonsterList();
+  document.getElementById('editorTitle').textContent = 'Select or create a monster';
+  document.getElementById('editorBody').innerHTML = '<div class="empty-state"><div style="font-size:2.5rem;margin-bottom:0.75rem">☠</div><p>Select a monster to view or edit it,<br>or create a new custom creature.</p></div>';
+}
+
+init();
+</script>
+</body>
+</html>
