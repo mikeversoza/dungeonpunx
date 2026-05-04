@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import Module — DUNGEONPUNX</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.import-container { padding: 1.5rem; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; }
+.import-header { margin-bottom: 1.5rem; }
+.import-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold); margin-bottom: 0.3rem; }
+.import-header p { color: var(--stone-light); font-style: italic; font-size: 0.95rem; }
+
+.import-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+
+.paste-panel {
+  background: linear-gradient(135deg, rgba(20,16,28,0.97), rgba(14,10,20,0.99));
+  border: 1px solid rgba(201,162,39,0.3);
+  padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+.module-textarea {
+  flex: 1;
+  min-height: 420px;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  resize: vertical;
+  padding: 1rem;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(201,162,39,0.25);
+  color: var(--parchment);
+  border-radius: 2px;
+  outline: none;
+}
+.module-textarea:focus { border-color: var(--gold); }
+.module-textarea::placeholder { color: var(--stone-light); font-style: italic; }
+
+.parse-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.8rem 2rem;
+  border: 2px solid var(--torch);
+  background: rgba(255,107,26,0.08);
+  color: var(--torch);
+  cursor: pointer; transition: all 0.2s;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+}
+.parse-btn:hover { background: rgba(255,107,26,0.2); }
+.parse-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Preview panel */
+.preview-panel {
+  background: linear-gradient(135deg, rgba(20,16,28,0.97), rgba(14,10,20,0.99));
+  border: 1px solid rgba(201,162,39,0.3);
+  padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 1rem;
+  position: relative;
+}
+.preview-title { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--gold); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+.preview-scroll {
+  flex: 1; overflow-y: auto; max-height: 520px;
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+
+/* Result cards */
+.result-section { margin-bottom: 0.5rem; }
+.result-section-title {
+  font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--stone-light);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  border-bottom: 1px solid rgba(201,162,39,0.15); padding-bottom: 0.4rem; margin-bottom: 0.5rem;
+}
+
+.result-card {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(201,162,39,0.18);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+.result-card.type-room { border-left: 3px solid var(--emerald-bright); }
+.result-card.type-monster { border-left: 3px solid var(--blood-bright); }
+.result-card.type-boss { border-left: 3px solid var(--torch); }
+.result-card.type-npc { border-left: 3px solid #7b68ee; }
+
+.rc-name { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--parchment); margin-bottom: 0.25rem; }
+.rc-type { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; }
+.rc-desc { font-size: 0.82rem; color: var(--stone-light); line-height: 1.5; }
+.rc-stats { display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.75rem; color: var(--stone-light); margin-top: 0.4rem; }
+.rc-stat { color: var(--parchment); }
+
+.rc-select {
+  position: absolute; top: 0.6rem; right: 0.6rem;
+  accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,107,26,0.3);
+  border-top-color: var(--torch);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Import status bar */
+.status-bar {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(201,162,39,0.2);
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.status-bar.success { border-color: var(--emerald-bright); }
+.status-bar.error { border-color: var(--blood-bright); }
+.status-bar.loading { border-color: var(--torch); }
+
+/* Examples */
+.example-chip {
+  display: inline-block;
+  background: rgba(201,162,39,0.06);
+  border: 1px solid rgba(201,162,39,0.2);
+  color: var(--stone-light);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  margin: 0.15rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.example-chip:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Import summary */
+.import-summary {
+  background: rgba(39,174,96,0.06);
+  border: 1px solid rgba(39,174,96,0.3);
+  padding: 1.25rem;
+  display: none;
+}
+.import-summary h3 { font-family: 'Cinzel', serif; color: var(--emerald-bright); margin-bottom: 0.75rem; font-size: 0.95rem; letter-spacing: 0.1em; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; }
+.summary-item { text-align: center; }
+.summary-num { font-family: 'Cinzel', serif; font-size: 2rem; color: var(--gold); }
+.summary-label { font-size: 0.72rem; color: var(--stone-light); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* Tabs */
+.tab-bar { display: flex; gap: 0; border-bottom: 1px solid rgba(201,162,39,0.2); margin-bottom: 1rem; }
+.tab-btn {
+  font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.08em;
+  padding: 0.5rem 1rem; border: none; border-bottom: 2px solid transparent;
+  background: transparent; color: var(--stone-light); cursor: pointer; transition: all 0.15s;
+  text-transform: uppercase;
+}
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-btn:hover { color: var(--gold); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand">⚔ DUNGEONPUNX</a>
+  <a href="index.html">Adventure</a>
+  <a href="characters.html">Characters</a>
+  <a href="map.html">Map</a>
+  <a href="rooms.html">Room Editor</a>
+  <a href="monsters.html">Monsters</a>
+  <a href="import.html" class="active">Import Module</a>
+</nav>
+
+<div class="import-container">
+  <div class="import-header">
+    <h1>📜 Import Dungeon Module</h1>
+    <p>Paste text from any D&D module, sourcebook, or your own notes. The AI will extract rooms, monsters, NPCs, and encounters and add them to your dungeon pool.</p>
+  </div>
+
+  <div id="statusBar" class="status-bar" style="display:none">
+    <span id="statusIcon"></span>
+    <span id="statusText"></span>
+  </div>
+
+  <div class="import-layout">
+    <!-- PASTE PANEL -->
+    <div class="paste-panel">
+      <div>
+        <div class="panel-title" style="margin-bottom:0.75rem">Module Text</div>
+        <div style="font-size:0.8rem;color:var(--stone-light);margin-bottom:0.5rem">
+          Paste room descriptions, encounter tables, NPC stat blocks — any module text:
+        </div>
+        <div style="margin-bottom:0.75rem">
+          <span style="font-size:0.75rem;color:var(--stone-light)">Examples: </span>
+          <span class="example-chip" onclick="loadExample('dungeon')">Classic Dungeon</span>
+          <span class="example-chip" onclick="loadExample('wilderness')">Wilderness Encounter</span>
+          <span class="example-chip" onclick="loadExample('statblock')">Monster Stat Block</span>
+        </div>
+      </div>
+
+      <textarea class="module-textarea" id="moduleText"
+        placeholder="Paste your dungeon module text here...
+
+Example:
+ROOM 1: THE ENTRY HALL
+A long corridor stretches before you, its walls lined with crumbling stone reliefs depicting scenes of ancient battle. Torches sputter in iron sconces. At the far end, a portcullis of rusted iron bars blocks further progress.
+
+Encounter: 2 Skeleton Guards lurk in the shadows..."></textarea>
+
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
+        <button class="parse-btn" id="parseBtn" onclick="parseModule()">
+          <span id="parseBtnIcon">🔮</span> Parse with AI
+        </button>
+        <button class="btn btn-sm" onclick="clearAll()">Clear</button>
+        <div style="font-size:0.78rem;color:var(--stone-light);font-style:italic">
+          Powered by Claude AI
+        </div>
+      </div>
+    </div>
+
+    <!-- PREVIEW PANEL -->
+    <div class="preview-panel">
+      <div class="panel-title">Extracted Content</div>
+
+      <div id="emptyPreview" style="color:var(--stone-light);font-style:italic;font-size:0.9rem;padding:2rem 0;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:0.75rem">📖</div>
+        Parse a module to see extracted rooms, monsters, and encounters here.
+      </div>
+
+      <div id="previewContent" style="display:none">
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="showTab('rooms')">Rooms <span id="roomTabCount" class="count-badge" style="font-size:0.6rem;min-width:16px;height:16px">0</span></button>
+          <button class="tab-btn" onclick="showTab('monsters')">Monsters <span id="monTabCount" class="count-badge" style="font-size:0.6rem;min-width:16px;height:16px">0</span></button>
+          <button class="tab-btn" onclick="showTab('npcs')">NPCs <span id="npcTabCount" class="count-badge" style="font-size:0.6rem;min-width:16px;height:16px">0</span></button>
+        </div>
+
+        <div class="preview-scroll">
+          <div id="tabRooms" class="tab-content active"></div>
+          <div id="tabMonsters" class="tab-content"></div>
+          <div id="tabNpcs" class="tab-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT SUMMARY -->
+  <div class="import-summary" id="importSummary">
+    <h3>✓ Ready to Import</h3>
+    <div class="summary-grid">
+      <div class="summary-item"><div class="summary-num" id="sumRooms">0</div><div class="summary-label">Rooms</div></div>
+      <div class="summary-item"><div class="summary-num" id="sumMonsters">0</div><div class="summary-label">Monsters</div></div>
+      <div class="summary-item"><div class="summary-num" id="sumNpcs">0</div><div class="summary-label">NPCs</div></div>
+    </div>
+    <div style="display:flex;gap:1rem;margin-top:1.25rem;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="importSelected()" style="flex:1">⚔ Import Selected to Dungeon Pool</button>
+      <button class="btn" onclick="selectAll()">Select All</button>
+      <button class="btn" onclick="deselectAll()">Deselect All</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="panel" style="margin-top:1.5rem">
+    <div class="panel-title">Import History</div>
+    <div id="importHistory" style="font-size:0.85rem;color:var(--stone-light)">
+      No imports yet this session.
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span><a href="thanks.html" class="copyright" title="">©</a>&nbsp; Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span></span>
+</footer>
+
+<script src="engine.js"></script>
+<script>
+const E = DungeonEngine;
+let parsedData = { rooms: [], monsters: [], npcs: [] };
+let importHistory = [];
+
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+function init() {
+  if (!E.AUTH.check()) { window.location.href = 'index.html'; return; }
+}
+
+// ---- EXAMPLES ----
+const examples = {
+  dungeon: `ROOM 1: THE ENTRY CRYPT
+The air is thick with the smell of old death. Stone sarcophagi line the walls, their lids carved with grim-faced warriors. Cobwebs drape the ceiling. A single torch burns in an iron sconce, casting wild shadows.
+
+Encounter: 3 Skeletons animate when players cross the threshold. They wear tattered chainmail and carry rusted swords.
+
+Treasure: A loose stone near the north wall hides a pouch containing 15 gold pieces and a Potion of Healing.
+
+Exit: Iron door to the north (locked, DC 13), archway to the east.
+
+ROOM 2: THE PUZZLE CHAMBER  
+Four stone pillars rise from the floor, each carved with a different symbol: sun, moon, star, and void. The ceiling bears a mosaic map of a dungeon. In the center, a pedestal holds a crystal orb.
+
+Puzzle: The players must arrange offerings on the correct pillars. Placing a lit torch on the sun pillar, water on the moon, a gem on the star, and nothing on the void opens the sealed door. Wrong answers trigger a glyph of warding (4d6 lightning, DC 14 DEX save).`,
+
+  wilderness: `THE BANDIT AMBUSH
+While traveling the Thornwood Road, players hear the snap of a crossbow bolt. Six bandits have set up a classic pincer ambush using the tree line.
+
+Bandit Leader: Scar-faced woman named Marta. Uses a shortsword +4, 2d6+2 damage. HP 32, AC 14. Offers to parley if reduced to half HP.
+
+Bandits (5): Standard bandits. HP 11, AC 12, shortsword +3, 1d6+1 damage. They flee if their leader falls.
+
+Loot: The bandits carry a total of 45 gold pieces, a stolen merchant ledger (worth 20gp as evidence), and Marta has a +1 dagger she won in a card game.`,
+
+  statblock: `SHADOW STALKER
+Medium undead, chaotic evil
+
+Armor Class: 13 (natural armor)
+Hit Points: 38 (7d8 + 7)
+Speed: 40 ft., climb 40 ft.
+
+STR 6 (-2) | DEX 16 (+3) | CON 12 (+1) | INT 8 (-1) | WIS 10 (+0) | CHA 14 (+2)
+
+Skills: Stealth +7
+Damage Vulnerabilities: Radiant
+Damage Resistances: Acid, Fire, Thunder; Bludgeoning, Piercing, and Slashing from nonmagical attacks
+Damage Immunities: Cold, Lightning, Necrotic, Poison
+Condition Immunities: Exhaustion, Frightened, Grappled, Paralyzed, Poisoned, Prone, Restrained
+Senses: Darkvision 60 ft., Passive Perception 10
+Languages: The languages it knew in life
+Challenge: 4 (1,100 XP)
+
+Shadow Step. While in dim light or darkness, the Shadow Stalker can teleport up to 30 feet to an unoccupied space it can see that is also in dim light or darkness.
+
+Actions:
+Claw. Melee Weapon Attack: +5 to hit, reach 5 ft., one creature. Hit: 2d6+3 necrotic damage and the target's Strength score is reduced by 1d4.
+
+Soul Drain. The Shadow Stalker targets one creature it can see within 30 feet. The target must succeed on a DC 13 Wisdom saving throw or take 3d6 psychic damage and become frightened until the end of its next turn.`
+};
+
+function loadExample(type) {
+  document.getElementById('moduleText').value = examples[type];
+}
+
+// ---- AI PARSING ----
+async function parseModule() {
+  const text = document.getElementById('moduleText').value.trim();
+  if (!text) { showStatus('error', '✕ Please paste some module text first.'); return; }
+
+  showStatus('loading', '<div class="spinner"></div> Analyzing module with AI...');
+  setParseBtn(true);
+
+  const systemPrompt = `You are a D&D 5e dungeon module parser. Extract structured data from the provided dungeon module text.
+
+Return ONLY a valid JSON object (no markdown, no backticks, no explanation) with this exact structure:
+{
+  "rooms": [
+    {
+      "name": "Room name",
+      "type": "combat|puzzle|treasure|exploration|boss|social",
+      "description": "What players see when entering",
+      "flavor": "Atmospheric detail",
+      "exits": ["north","south","east","west"],
+      "minLevel": 1,
+      "maxLevel": 10,
+      "puzzle": null,
+      "hasTreasure": false,
+      "treasureNote": ""
+    }
+  ],
+  "monsters": [
+    {
+      "name": "Monster name",
+      "type": "humanoid|undead|beast|dragon|fiend|aberration|construct|monstrosity|ooze|giant",
+      "size": "Tiny|Small|Medium|Large|Huge|Gargantuan",
+      "cr": "1/4",
+      "isBoss": false,
+      "hp": 10,
+      "ac": 12,
+      "attack": "+4",
+      "damage": "1d6+2",
+      "xp": 200,
+      "str": 10, "dex": 10, "con": 10, "int": 10, "wis": 10, "cha": 10,
+      "traits": "",
+      "actions": [{"name":"Attack","attack":"+4 to hit","effect":"1d6+2 damage"}],
+      "description": ""
+    }
+  ],
+  "npcs": [
+    {
+      "name": "NPC name",
+      "role": "Their role or occupation",
+      "description": "Appearance and personality",
+      "stats": "Any combat stats if hostile",
+      "motivation": "What they want",
+      "loot": ""
+    }
+  ]
+}
+
+Rules:
+- Extract ALL rooms, monsters, and NPCs mentioned
+- For rooms without explicit type, infer from context (combat if enemies, puzzle if riddle, etc.)
+- Fill in reasonable D&D 5e stats if not explicitly stated, based on CR/level context
+- Use only the exact exit strings: north, south, east, west
+- If puzzle details exist, include puzzle object: {"question":"...","answer":"...","hint":"...","successLoot":true,"failureTrap":{"damage":"2d6","type":"fire","save":"DEX DC 13"}}
+- Keep descriptions concise but evocative
+- If nothing relevant found in a category, return empty array []`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: `Parse this dungeon module text and extract all rooms, monsters, and NPCs:\n\n${text}` }]
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const rawText = data.content.map(c => c.text || '').join('');
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    parsedData = JSON.parse(clean);
+
+    // Normalize
+    parsedData.rooms = (parsedData.rooms || []).map(r => ({ ...r, id: 'import_' + Date.now() + Math.random() }));
+    parsedData.monsters = (parsedData.monsters || []).map(m => ({ ...m, id: 'import_' + Date.now() + Math.random() }));
+    parsedData.npcs = (parsedData.npcs || []);
+
+    showStatus('success', `✓ Found ${parsedData.rooms.length} rooms, ${parsedData.monsters.length} monsters, ${parsedData.npcs.length} NPCs`);
+    renderPreview();
+
+  } catch (err) {
+    console.error(err);
+    showStatus('error', `✕ Parse error: ${err.message}. Check your connection and try again.`);
+    // Fallback: manual parse
+    fallbackParse(text);
+  }
+
+  setParseBtn(false);
+}
+
+// Simple regex fallback if API fails
+function fallbackParse(text) {
+  const rooms = [];
+  const monsters = [];
+
+  // Extract room-like sections (lines starting with ROOM or bold headings)
+  const roomMatches = text.match(/(?:ROOM\s+\d+[:\.]?|##\s+|###\s+)([^\n]+)/gi) || [];
+  roomMatches.forEach((match, i) => {
+    const name = match.replace(/^(ROOM\s*\d+[:\.]?|#+)\s*/i, '').trim();
+    rooms.push({
+      id: 'import_' + Date.now() + i,
+      name: name || `Imported Room ${i+1}`,
+      type: 'exploration',
+      description: 'Imported from module. Edit to add full description.',
+      flavor: '',
+      exits: ['north','south'],
+      minLevel: 1, maxLevel: 20,
+    });
+  });
+
+  // Extract stat block-like lines
+  const hpMatch = text.match(/Hit Points?:?\s*(\d+)/i);
+  const acMatch = text.match(/Armor Class:?\s*(\d+)/i);
+  const nameMatch = text.match(/^([A-Z][A-Z\s]+)\n/m);
+  if (hpMatch && acMatch) {
+    monsters.push({
+      id: 'import_mon_' + Date.now(),
+      name: nameMatch ? nameMatch[1].trim() : 'Imported Monster',
+      type: 'humanoid', size: 'Medium', cr: '1', isBoss: false,
+      hp: parseInt(hpMatch[1]), ac: parseInt(acMatch[1]),
+      attack: '+3', damage: '1d6+2', xp: 200,
+    });
+  }
+
+  if (rooms.length || monsters.length) {
+    parsedData = { rooms, monsters, npcs: [] };
+    showStatus('success', `✓ Basic extraction: ${rooms.length} rooms, ${monsters.length} monsters (AI unavailable — manual review recommended)`);
+    renderPreview();
+  } else {
+    showStatus('error', '✕ Could not extract content. Try connecting to enable AI parsing.');
+  }
+}
+
+function renderPreview() {
+  document.getElementById('emptyPreview').style.display = 'none';
+  document.getElementById('previewContent').style.display = 'block';
+  document.getElementById('importSummary').style.display = 'block';
+
+  document.getElementById('roomTabCount').textContent = parsedData.rooms.length;
+  document.getElementById('monTabCount').textContent = parsedData.monsters.length;
+  document.getElementById('npcTabCount').textContent = parsedData.npcs.length;
+  document.getElementById('sumRooms').textContent = parsedData.rooms.length;
+  document.getElementById('sumMonsters').textContent = parsedData.monsters.length;
+  document.getElementById('sumNpcs').textContent = parsedData.npcs.length;
+
+  // Rooms tab
+  document.getElementById('tabRooms').innerHTML = parsedData.rooms.length === 0
+    ? '<div style="color:var(--stone-light);font-style:italic;padding:1rem 0">No rooms extracted.</div>'
+    : parsedData.rooms.map((r, i) => `
+      <div class="result-card type-room">
+        <input type="checkbox" class="rc-select" id="sel_room_${i}" checked>
+        <div class="rc-name">${r.name}</div>
+        <div class="rc-type" style="color:var(--emerald-bright)">Room · ${r.type}</div>
+        <div class="rc-desc">${r.description}</div>
+        <div class="rc-stats">
+          <span>Exits: <span class="rc-stat">${(r.exits||[]).join(', ')}</span></span>
+          <span>Levels: <span class="rc-stat">${r.minLevel}–${r.maxLevel}</span></span>
+          ${r.puzzle ? '<span style="color:#7b68ee">Has Puzzle</span>' : ''}
+          ${r.hasTreasure ? '<span style="color:var(--gold)">Has Treasure</span>' : ''}
+        </div>
+      </div>
+    `).join('');
+
+  // Monsters tab
+  document.getElementById('tabMonsters').innerHTML = parsedData.monsters.length === 0
+    ? '<div style="color:var(--stone-light);font-style:italic;padding:1rem 0">No monsters extracted.</div>'
+    : parsedData.monsters.map((m, i) => `
+      <div class="result-card ${m.isBoss ? 'type-boss' : 'type-monster'}">
+        <input type="checkbox" class="rc-select" id="sel_mon_${i}" checked>
+        <div class="rc-name">${m.name} ${m.isBoss ? '<span style="font-size:0.65rem;color:var(--torch);border:1px solid currentColor;padding:1px 4px;margin-left:4px">BOSS</span>' : ''}</div>
+        <div class="rc-type" style="color:${m.isBoss?'var(--torch)':'var(--blood-bright)'}">CR ${m.cr} ${m.size||'Medium'} ${m.type||'humanoid'}</div>
+        <div class="rc-desc">${m.description || m.traits || ''}</div>
+        <div class="rc-stats">
+          <span>HP: <span class="rc-stat">${m.hp}</span></span>
+          <span>AC: <span class="rc-stat">${m.ac}</span></span>
+          <span>Atk: <span class="rc-stat">${m.attack}</span></span>
+          <span>Dmg: <span class="rc-stat">${m.damage}</span></span>
+          <span>XP: <span class="rc-stat">${m.xp}</span></span>
+        </div>
+      </div>
+    `).join('');
+
+  // NPCs tab
+  document.getElementById('tabNpcs').innerHTML = parsedData.npcs.length === 0
+    ? '<div style="color:var(--stone-light);font-style:italic;padding:1rem 0">No NPCs extracted.</div>'
+    : parsedData.npcs.map((n, i) => `
+      <div class="result-card type-npc">
+        <input type="checkbox" class="rc-select" id="sel_npc_${i}" checked>
+        <div class="rc-name">${n.name}</div>
+        <div class="rc-type" style="color:#7b68ee">${n.role || 'NPC'}</div>
+        <div class="rc-desc">${n.description || ''}</div>
+        ${n.motivation ? `<div class="rc-stats"><span>Motivation: <span class="rc-stat">${n.motivation}</span></span></div>` : ''}
+      </div>
+    `).join('');
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+}
+
+function importSelected() {
+  const customs = E.getCustomRooms();
+  const customMons = E.STORE.get('customMonsters') || [];
+  let addedRooms = 0, addedMons = 0, addedNpcs = 0;
+
+  // Import selected rooms
+  parsedData.rooms.forEach((r, i) => {
+    const cb = document.getElementById(`sel_room_${i}`);
+    if (cb && cb.checked) {
+      customs.push({ ...r, id: 'import_r_' + Date.now() + '_' + i });
+      addedRooms++;
+    }
+  });
+
+  // Import selected monsters
+  parsedData.monsters.forEach((m, i) => {
+    const cb = document.getElementById(`sel_mon_${i}`);
+    if (cb && cb.checked) {
+      customMons.push({ ...m, id: 'import_m_' + Date.now() + '_' + i, isCustom: true });
+      addedMons++;
+    }
+  });
+
+  // Import NPCs as social rooms
+  parsedData.npcs.forEach((n, i) => {
+    const cb = document.getElementById(`sel_npc_${i}`);
+    if (cb && cb.checked) {
+      customs.push({
+        id: 'import_npc_' + Date.now() + '_' + i,
+        name: n.name + (n.role ? ` — ${n.role}` : ''),
+        type: 'social',
+        description: n.description || `${n.name} awaits the party.`,
+        flavor: n.motivation ? `They seek: ${n.motivation}` : '',
+        exits: ['north', 'south'],
+        minLevel: 1, maxLevel: 20,
+      });
+      addedNpcs++;
+    }
+  });
+
+  E.saveCustomRooms(customs);
+  E.STORE.set('customMonsters', customMons);
+
+  // Log to history
+  const entry = {
+    time: new Date().toLocaleTimeString(),
+    text: document.getElementById('moduleText').value.slice(0, 60) + '...',
+    rooms: addedRooms, monsters: addedMons, npcs: addedNpcs
+  };
+  importHistory.unshift(entry);
+  renderHistory();
+
+  // Reset
+  parsedData = { rooms: [], monsters: [], npcs: [] };
+  document.getElementById('previewContent').style.display = 'none';
+  document.getElementById('emptyPreview').style.display = 'block';
+  document.getElementById('importSummary').style.display = 'none';
+  document.getElementById('moduleText').value = '';
+
+  showStatus('success', `✓ Imported ${addedRooms} rooms, ${addedMons} monsters, ${addedNpcs} NPCs into the dungeon pool!`);
+}
+
+function renderHistory() {
+  const el = document.getElementById('importHistory');
+  if (!importHistory.length) { el.innerHTML = 'No imports yet this session.'; return; }
+  el.innerHTML = importHistory.map(h => `
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid rgba(201,162,39,0.1)">
+      <span style="color:var(--stone-light);font-size:0.78rem">${h.time}</span>
+      <span style="flex:1;color:var(--parchment);font-style:italic">"${h.text}"</span>
+      <span style="color:var(--emerald-bright);font-size:0.78rem">+${h.rooms}R +${h.monsters}M +${h.npcs}NPC</span>
+    </div>
+  `).join('');
+}
+
+function selectAll() {
+  document.querySelectorAll('.rc-select').forEach(cb => cb.checked = true);
+}
+function deselectAll() {
+  document.querySelectorAll('.rc-select').forEach(cb => cb.checked = false);
+}
+
+function clearAll() {
+  document.getElementById('moduleText').value = '';
+  parsedData = { rooms: [], monsters: [], npcs: [] };
+  document.getElementById('previewContent').style.display = 'none';
+  document.getElementById('emptyPreview').style.display = 'block';
+  document.getElementById('importSummary').style.display = 'none';
+  document.getElementById('statusBar').style.display = 'none';
+}
+
+function showStatus(type, html) {
+  const bar = document.getElementById('statusBar');
+  bar.className = `status-bar ${type}`;
+  bar.innerHTML = html;
+  bar.style.display = 'flex';
+}
+
+function setParseBtn(loading) {
+  const btn = document.getElementById('parseBtn');
+  btn.disabled = loading;
+  document.getElementById('parseBtnIcon').innerHTML = loading ? '<div class="spinner" style="width:16px;height:16px;border-width:2px"></div>' : '🔮';
+}
+
+init();
+</script>
+</body>
+</html>
