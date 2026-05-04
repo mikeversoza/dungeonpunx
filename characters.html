@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Sheets — Depths Below</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.chars-container { padding: 1.5rem; flex: 1; }
+.chars-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.chars-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold); }
+.chars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+
+.char-card {
+  background: linear-gradient(135deg, rgba(20,16,28,0.97), rgba(14,10,20,0.99));
+  border: 1px solid rgba(201,162,39,0.3);
+  padding: 1.2rem;
+  position: relative;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.char-card:hover { border-color: var(--gold); }
+.char-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+.char-name { font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gold); }
+.char-meta { font-size: 0.82rem; color: var(--stone-light); margin-top: 0.1rem; }
+.char-actions { display: flex; gap: 0.3rem; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin: 0.75rem 0; }
+.stat-box {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(201,162,39,0.2);
+  text-align: center;
+  padding: 0.4rem 0.2rem;
+}
+.stat-abbr { font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--stone-light); letter-spacing: 0.05em; }
+.stat-score { font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--parchment); }
+.stat-mod { font-size: 0.7rem; color: var(--gold); }
+
+.char-vitals { display: flex; gap: 0.75rem; font-size: 0.82rem; margin-bottom: 0.5rem; }
+.vital { text-align: center; }
+.vital-label { font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--stone-light); letter-spacing: 0.08em; }
+.vital-val { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--parchment); }
+
+.skills-section { font-size: 0.78rem; color: var(--stone-light); margin-top: 0.5rem; }
+.skill-prof { color: var(--gold); }
+
+.loot-chip {
+  display: inline-block;
+  background: rgba(201,162,39,0.1);
+  border: 1px solid rgba(201,162,39,0.3);
+  color: var(--gold);
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  margin: 0.15rem;
+  border-radius: 2px;
+}
+
+/* Sheet editor modal */
+.sheet-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 200;
+  display: flex; align-items: flex-start; justify-content: center;
+  overflow-y: auto;
+  padding: 2rem 1rem;
+}
+.sheet-box {
+  background: linear-gradient(135deg, #1e1828, #14101c);
+  border: 2px solid var(--gold);
+  padding: 2rem;
+  width: 100%;
+  max-width: 750px;
+  box-shadow: 0 0 60px rgba(201,162,39,0.2);
+}
+.sheet-box h2 { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--gold); margin-bottom: 1.5rem; text-align: center; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+.form-group { margin-bottom: 0.75rem; }
+
+.ability-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.ability-input-box { text-align: center; }
+.ability-input-box label { font-size: 0.65rem; }
+.ability-input-box input { text-align: center; font-size: 1.1rem; padding: 0.4rem 0.3rem; }
+
+.skills-checkboxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; font-size: 0.8rem; }
+.skill-check { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+.skill-check input[type=checkbox] { width: auto; accent-color: var(--gold); }
+
+.xp-bar-bg {
+  height: 8px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(201,162,39,0.2);
+  margin: 4px 0;
+}
+.xp-bar-fill { height: 100%; background: linear-gradient(90deg, #7b68ee, #9b88ff); transition: width 0.5s; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand">⚔ Depths Below</a>
+  <a href="index.html">Adventure</a>
+  <a href="characters.html" class="active">Characters</a>
+  <a href="map.html">Map</a>
+  <a href="rooms.html">Room Editor</a>
+</nav>
+
+<div class="chars-container">
+  <div class="chars-header">
+    <div>
+      <h1>Character Sheets</h1>
+      <div style="color:var(--stone-light);font-style:italic;font-size:0.9rem">Manage your party's heroes</div>
+    </div>
+    <button class="btn btn-success" onclick="openNewChar()">+ New Character</button>
+  </div>
+
+  <div id="charGrid" class="chars-grid">
+    <div style="color:var(--stone-light);font-style:italic;grid-column:1/-1;text-align:center;padding:3rem">
+      No characters yet. Create your first hero!
+    </div>
+  </div>
+</div>
+
+<!-- Sheet Editor -->
+<div id="sheetModal" class="sheet-modal" style="display:none">
+  <div class="sheet-box fade-in">
+    <h2 id="sheetModalTitle">New Character</h2>
+
+    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem">IDENTITY</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Character Name</label><input type="text" id="f_name" placeholder="Enter name..."></div>
+      <div class="form-group"><label>Player Name</label><input type="text" id="f_player" placeholder="Player name..."></div>
+      <div class="form-group"><label>Race</label><select id="f_race"></select></div>
+      <div class="form-group"><label>Class</label><select id="f_class"></select></div>
+      <div class="form-group"><label>Alignment</label><select id="f_alignment"></select></div>
+      <div class="form-group"><label>Background</label><input type="text" id="f_background" placeholder="e.g. Soldier, Sage..."></div>
+    </div>
+
+    <div class="form-grid-3" style="margin-bottom:1rem">
+      <div class="form-group"><label>Level (1–20)</label><input type="number" id="f_level" min="1" max="20" value="1" oninput="calcDerived()"></div>
+      <div class="form-group"><label>Experience Points</label><input type="number" id="f_xp" min="0" value="0"></div>
+      <div class="form-group"><label>Proficiency Bonus</label><input type="text" id="f_prof" readonly placeholder="+2"></div>
+    </div>
+
+    <hr class="divider">
+    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">ABILITY SCORES</div>
+    <div class="ability-grid" id="abilityGrid"></div>
+
+    <hr class="divider">
+    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">COMBAT</div>
+    <div class="form-grid-3">
+      <div class="form-group"><label>Max HP</label><input type="number" id="f_maxHP" min="1" value="10"></div>
+      <div class="form-group"><label>Current HP</label><input type="number" id="f_currentHP" min="0" value="10"></div>
+      <div class="form-group"><label>Temp HP</label><input type="number" id="f_tempHP" min="0" value="0"></div>
+      <div class="form-group"><label>Armor Class</label><input type="number" id="f_ac" min="1" value="10"></div>
+      <div class="form-group"><label>Speed (ft)</label><input type="number" id="f_speed" min="0" value="30"></div>
+      <div class="form-group"><label>Initiative</label><input type="number" id="f_initiative" value="0"></div>
+    </div>
+
+    <hr class="divider">
+    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">SAVING THROWS (check proficiencies)</div>
+    <div class="skills-checkboxes" id="savingThrowChecks" style="grid-template-columns:repeat(3,1fr);margin-bottom:1rem"></div>
+
+    <hr class="divider">
+    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">SKILL PROFICIENCIES</div>
+    <div class="skills-checkboxes" id="skillChecks"></div>
+
+    <hr class="divider">
+    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">INVENTORY & NOTES</div>
+    <div class="form-group"><label>Inventory (one item per line)</label><textarea id="f_inventory" rows="4" placeholder="Longsword&#10;Chain mail&#10;Explorer's pack..."></textarea></div>
+    <div class="form-group"><label>Backstory & Notes</label><textarea id="f_notes" rows="3" placeholder="Write your character's history..."></textarea></div>
+
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem">
+      <button class="btn btn-success" onclick="saveChar()">Save Character</button>
+      <button class="btn" onclick="closeSheetModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span> &nbsp;·&nbsp; <a href="thanks.html" class="copyright" title="">©</a></span>
+</footer>
+
+<script src="engine.js"></script>
+<script>
+const E = DungeonEngine;
+let editingId = null;
+
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+function init() {
+  if (!E.AUTH.check()) { window.location.href = 'index.html'; return; }
+  buildFormSelects();
+  buildAbilityGrid();
+  buildSavingThrowChecks();
+  buildSkillChecks();
+  renderChars();
+}
+
+function buildFormSelects() {
+  const raceEl = document.getElementById('f_race');
+  raceEl.innerHTML = E.D5E.races.map(r => `<option>${r}</option>`).join('');
+  const classEl = document.getElementById('f_class');
+  classEl.innerHTML = E.D5E.classes.map(c => `<option>${c}</option>`).join('');
+  const alignEl = document.getElementById('f_alignment');
+  alignEl.innerHTML = E.D5E.alignments.map(a => `<option>${a}</option>`).join('');
+}
+
+function buildAbilityGrid() {
+  const grid = document.getElementById('abilityGrid');
+  grid.innerHTML = E.D5E.abilityScores.map(ab => `
+    <div class="ability-input-box">
+      <label>${E.D5E.abilityAbbr[ab]}</label>
+      <input type="number" id="ab_${ab}" min="1" max="30" value="10" oninput="calcDerived()" style="padding:0.3rem">
+      <div style="font-size:0.7rem;color:var(--gold);text-align:center;margin-top:2px" id="mod_${ab}">+0</div>
+    </div>
+  `).join('');
+}
+
+function buildSavingThrowChecks() {
+  const c = document.getElementById('savingThrowChecks');
+  c.innerHTML = E.D5E.savingThrows.map(st => `
+    <label class="skill-check"><input type="checkbox" id="st_${st}"> ${E.D5E.abilityAbbr[st] || st}</label>
+  `).join('');
+}
+
+function buildSkillChecks() {
+  const c = document.getElementById('skillChecks');
+  c.innerHTML = E.D5E.skills.map(sk => `
+    <label class="skill-check"><input type="checkbox" id="sk_${sk.replace(/\s/g,'_')}"> ${sk}</label>
+  `).join('');
+}
+
+function calcDerived() {
+  const level = parseInt(document.getElementById('f_level').value) || 1;
+  document.getElementById('f_prof').value = '+' + E.D5E.proficiencyBonus(level);
+  E.D5E.abilityScores.forEach(ab => {
+    const score = parseInt(document.getElementById(`ab_${ab}`).value) || 10;
+    const mod = E.DICE.modifier(score);
+    document.getElementById(`mod_${ab}`).textContent = (mod >= 0 ? '+' : '') + mod;
+  });
+}
+
+function renderChars() {
+  const chars = E.getCharacters();
+  const grid = document.getElementById('charGrid');
+  if (!chars.length) {
+    grid.innerHTML = '<div style="color:var(--stone-light);font-style:italic;grid-column:1/-1;text-align:center;padding:3rem">No characters yet. Create your first hero!</div>';
+    return;
+  }
+  grid.innerHTML = chars.map(c => {
+    const xpCurrent = c.xp || 0;
+    const nextXP = E.D5E.xpByLevel[c.level] || 999999;
+    const prevXP = E.D5E.xpByLevel[c.level - 1] || 0;
+    const xpPct = Math.min(100, ((xpCurrent - prevXP) / (nextXP - prevXP)) * 100);
+    const hpPct = Math.max(0, (c.currentHP / c.maxHP) * 100);
+    const profSkills = (c.skills || []).slice(0, 4);
+    return `
+    <div class="char-card" onclick="openEditChar('${c.id}')">
+      <div class="char-card-header">
+        <div>
+          <div class="char-name">${c.name}</div>
+          <div class="char-meta">${c.race} ${c.class} · Level ${c.level} · ${c.alignment || ''}</div>
+        </div>
+        <div class="char-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-sm" onclick="openEditChar('${c.id}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteChar('${c.id}')">✕</button>
+        </div>
+      </div>
+
+      <div class="char-vitals">
+        <div class="vital"><div class="vital-label">HP</div><div class="vital-val">${c.currentHP}/${c.maxHP}</div></div>
+        <div class="vital"><div class="vital-label">AC</div><div class="vital-val">${c.ac}</div></div>
+        <div class="vital"><div class="vital-label">Speed</div><div class="vital-val">${c.speed}ft</div></div>
+        <div class="vital"><div class="vital-label">Prof</div><div class="vital-val">+${E.D5E.proficiencyBonus(c.level)}</div></div>
+        <div class="vital"><div class="vital-label">Init</div><div class="vital-val">${c.initiative >= 0 ? '+' : ''}${c.initiative}</div></div>
+      </div>
+
+      <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${hpPct}%;background:${hpPct>50?'linear-gradient(90deg,#1a6b3a,#27ae60)':hpPct>25?'linear-gradient(90deg,#8b6914,#c9a227)':'linear-gradient(90deg,#5a0a0a,#c0392b)'}"></div></div>
+
+      <div class="stat-grid">
+        ${E.D5E.abilityScores.map(ab => {
+          const score = c.abilities?.[ab] || 10;
+          const mod = E.DICE.modifier(score);
+          return `<div class="stat-box"><div class="stat-abbr">${E.D5E.abilityAbbr[ab]}</div><div class="stat-score">${score}</div><div class="stat-mod">${mod>=0?'+':''}${mod}</div></div>`;
+        }).join('')}
+      </div>
+
+      <div style="margin-bottom:0.5rem">
+        <div style="font-size:0.72rem;color:var(--stone-light);margin-bottom:2px">XP: ${xpCurrent.toLocaleString()} / ${nextXP.toLocaleString()}</div>
+        <div class="xp-bar-bg"><div class="xp-bar-fill" style="width:${xpPct}%"></div></div>
+      </div>
+
+      ${profSkills.length ? `<div class="skills-section">Prof: ${profSkills.map(s=>`<span class="skill-prof">${s}</span>`).join(', ')}${c.skills.length > 4 ? ` +${c.skills.length - 4} more` : ''}</div>` : ''}
+
+      ${(c.loot && c.loot.length) ? `<div style="margin-top:0.5rem">${c.loot.slice(0,4).map(l=>`<span class="loot-chip">${l}</span>`).join('')}${c.loot.length>4?`<span class="loot-chip">+${c.loot.length-4}</span>`:''}</div>` : ''}
+
+      ${c.conditions && c.conditions.length ? `<div style="margin-top:0.4rem">${c.conditions.map(cond=>`<span class="tag tag-blood" style="font-size:0.6rem;margin-right:3px">${cond}</span>`).join('')}</div>` : ''}
+    </div>
+    `;
+  }).join('');
+}
+
+function openNewChar() {
+  editingId = null;
+  document.getElementById('sheetModalTitle').textContent = 'New Character';
+  clearForm();
+  document.getElementById('sheetModal').style.display = 'flex';
+}
+
+function openEditChar(id) {
+  const chars = E.getCharacters();
+  const char = chars.find(c => c.id === id);
+  if (!char) return;
+  editingId = id;
+  document.getElementById('sheetModalTitle').textContent = `Edit: ${char.name}`;
+  populateForm(char);
+  document.getElementById('sheetModal').style.display = 'flex';
+  document.querySelector('.sheet-box').scrollTop = 0;
+}
+
+function clearForm() {
+  document.getElementById('f_name').value = '';
+  document.getElementById('f_player').value = '';
+  document.getElementById('f_background').value = '';
+  document.getElementById('f_level').value = 1;
+  document.getElementById('f_xp').value = 0;
+  document.getElementById('f_maxHP').value = 10;
+  document.getElementById('f_currentHP').value = 10;
+  document.getElementById('f_tempHP').value = 0;
+  document.getElementById('f_ac').value = 10;
+  document.getElementById('f_speed').value = 30;
+  document.getElementById('f_initiative').value = 0;
+  document.getElementById('f_inventory').value = '';
+  document.getElementById('f_notes').value = '';
+  E.D5E.abilityScores.forEach(ab => { document.getElementById(`ab_${ab}`).value = 10; });
+  E.D5E.savingThrows.forEach(st => { document.getElementById(`st_${st}`).checked = false; });
+  E.D5E.skills.forEach(sk => { document.getElementById(`sk_${sk.replace(/\s/g,'_')}`).checked = false; });
+  calcDerived();
+}
+
+function populateForm(char) {
+  document.getElementById('f_name').value = char.name || '';
+  document.getElementById('f_player').value = char.playerName || '';
+  document.getElementById('f_race').value = char.race || 'Human';
+  document.getElementById('f_class').value = char.class || 'Fighter';
+  document.getElementById('f_alignment').value = char.alignment || 'True Neutral';
+  document.getElementById('f_background').value = char.background || '';
+  document.getElementById('f_level').value = char.level || 1;
+  document.getElementById('f_xp').value = char.xp || 0;
+  document.getElementById('f_maxHP').value = char.maxHP || 10;
+  document.getElementById('f_currentHP').value = char.currentHP || char.maxHP || 10;
+  document.getElementById('f_tempHP').value = char.tempHP || 0;
+  document.getElementById('f_ac').value = char.ac || 10;
+  document.getElementById('f_speed').value = char.speed || 30;
+  document.getElementById('f_initiative').value = char.initiative || 0;
+  document.getElementById('f_inventory').value = (char.inventory || []).join('\n');
+  document.getElementById('f_notes').value = char.notes || '';
+  E.D5E.abilityScores.forEach(ab => {
+    document.getElementById(`ab_${ab}`).value = char.abilities?.[ab] || 10;
+  });
+  E.D5E.savingThrows.forEach(st => {
+    document.getElementById(`st_${st}`).checked = (char.savingThrows || []).includes(st);
+  });
+  E.D5E.skills.forEach(sk => {
+    document.getElementById(`sk_${sk.replace(/\s/g,'_')}`).checked = (char.skills || []).includes(sk);
+  });
+  calcDerived();
+}
+
+function saveChar() {
+  const name = document.getElementById('f_name').value.trim();
+  if (!name) { alert('Please enter a character name.'); return; }
+
+  const abilities = {};
+  E.D5E.abilityScores.forEach(ab => { abilities[ab] = parseInt(document.getElementById(`ab_${ab}`).value) || 10; });
+  const savingThrows = E.D5E.savingThrows.filter(st => document.getElementById(`st_${st}`).checked);
+  const skills = E.D5E.skills.filter(sk => document.getElementById(`sk_${sk.replace(/\s/g,'_')}`).checked);
+  const level = parseInt(document.getElementById('f_level').value) || 1;
+  const maxHP = parseInt(document.getElementById('f_maxHP').value) || 10;
+
+  const charData = {
+    name,
+    playerName: document.getElementById('f_player').value,
+    race: document.getElementById('f_race').value,
+    class: document.getElementById('f_class').value,
+    alignment: document.getElementById('f_alignment').value,
+    background: document.getElementById('f_background').value,
+    level,
+    xp: parseInt(document.getElementById('f_xp').value) || 0,
+    maxHP,
+    currentHP: parseInt(document.getElementById('f_currentHP').value) || maxHP,
+    tempHP: parseInt(document.getElementById('f_tempHP').value) || 0,
+    ac: parseInt(document.getElementById('f_ac').value) || 10,
+    speed: parseInt(document.getElementById('f_speed').value) || 30,
+    initiative: parseInt(document.getElementById('f_initiative').value) || 0,
+    proficiencyBonus: E.D5E.proficiencyBonus(level),
+    abilities,
+    savingThrows,
+    skills,
+    inventory: document.getElementById('f_inventory').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    notes: document.getElementById('f_notes').value,
+  };
+
+  const chars = E.getCharacters();
+  if (editingId) {
+    const idx = chars.findIndex(c => c.id === editingId);
+    if (idx >= 0) {
+      chars[idx] = { ...chars[idx], ...charData };
+    }
+  } else {
+    chars.push(E.createCharacter(charData));
+  }
+  E.saveCharacters(chars);
+  closeSheetModal();
+  renderChars();
+}
+
+function deleteChar(id) {
+  if (!confirm('Delete this character permanently?')) return;
+  const chars = E.getCharacters().filter(c => c.id !== id);
+  E.saveCharacters(chars);
+  renderChars();
+}
+
+function closeSheetModal() {
+  document.getElementById('sheetModal').style.display = 'none';
+  editingId = null;
+}
+
+init();
+</script>
+</body>
+</html>
