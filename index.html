@@ -1,1 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dungeon Crawl — The Depths Below</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ===== GAME PAGE STYLES ===== */
+.game-container { display: grid; grid-template-columns: 280px 1fr 280px; gap: 1rem; padding: 1rem; flex: 1; min-height: 0; }
+
+/* LEFT: Players */
+.players-panel { display: flex; flex-direction: column; gap: 0.75rem; }
+.player-card {
+  background: linear-gradient(135deg, rgba(20,16,28,0.95), rgba(14,10,20,0.98));
+  border: 1px solid rgba(201,162,39,0.25);
+  padding: 0.9rem;
+  transition: border-color 0.2s;
+}
+.player-card.active-turn { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,162,39,0.2); }
+.player-card.dead { opacity: 0.5; filter: grayscale(0.7); border-color: var(--blood); }
+.player-name { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gold); margin-bottom: 0.2rem; }
+.player-meta { font-size: 0.78rem; color: var(--stone-light); margin-bottom: 0.5rem; }
+.player-hp { font-size: 0.85rem; color: var(--parchment); margin-bottom: 0.3rem; }
+
+/* CENTER: Room */
+.room-panel { display: flex; flex-direction: column; gap: 1rem; }
+.room-header {
+  background: linear-gradient(135deg, rgba(30,24,40,0.97), rgba(20,16,28,0.99));
+  border: 1px solid rgba(201,162,39,0.4);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.room-header::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(201,162,39,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+.room-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.5rem;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(201,162,39,0.4);
+  margin-bottom: 0.5rem;
+}
+.room-type-badge {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  padding: 0.2rem 0.7rem;
+  margin-bottom: 1rem;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+}
+.type-combat { color: var(--blood-bright); }
+.type-puzzle { color: #7b68ee; }
+.type-treasure { color: var(--gold); }
+.type-exploration { color: var(--emerald-bright); }
+.type-boss { color: #ff6b1a; }
+.type-social { color: #5bc0de; }
+
+.room-description { font-size: 1.05rem; line-height: 1.7; color: var(--parchment); margin-bottom: 0.75rem; }
+.room-flavor { font-size: 0.95rem; line-height: 1.6; color: var(--stone-light); font-style: italic; }
+
+/* COMBAT SECTION */
+.combat-area {
+  background: rgba(139,26,26,0.08);
+  border: 1px solid rgba(139,26,26,0.3);
+  padding: 1rem;
+}
+.monster-card {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(201,162,39,0.15);
+  margin-bottom: 0.5rem;
+  background: rgba(0,0,0,0.3);
+}
+.monster-card.dead { opacity: 0.4; text-decoration: line-through; }
+.monster-name { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--parchment); flex: 1; }
+.monster-info { font-size: 0.78rem; color: var(--stone-light); }
+
+/* PUZZLE SECTION */
+.puzzle-area {
+  background: rgba(123,104,238,0.08);
+  border: 1px solid rgba(123,104,238,0.3);
+  padding: 1rem;
+}
+.puzzle-question { font-size: 1.1rem; font-style: italic; color: var(--parchment); line-height: 1.7; margin-bottom: 1rem; }
+.puzzle-input-row { display: flex; gap: 0.5rem; }
+.puzzle-answer { font-family: 'Cinzel', serif; font-size: 0.85rem; }
+
+/* LOG */
+.log-panel { display: flex; flex-direction: column; }
+.log-entries { flex: 1; overflow-y: auto; max-height: 300px; padding: 0.5rem; }
+.log-entry {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+  border-left: 2px solid transparent;
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+.log-entry.info { border-color: var(--stone-light); color: var(--parchment); }
+.log-entry.combat { border-color: var(--blood-bright); color: #ffb3b3; }
+.log-entry.success { border-color: var(--emerald-bright); color: #b3ffcc; }
+.log-entry.warning { border-color: var(--gold); color: #fff3b3; }
+.log-entry.loot { border-color: var(--gold); color: var(--gold); }
+
+/* RIGHT: Dice + Actions */
+.actions-panel { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.dice-area { text-align: center; }
+.dice-row { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; margin-bottom: 0.75rem; }
+.die-btn {
+  width: 52px; height: 52px;
+  background: rgba(0,0,0,0.4);
+  border: 2px solid rgba(201,162,39,0.4);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex; align-items: center; justify-content: center;
+}
+.die-btn:hover { background: rgba(201,162,39,0.2); border-color: var(--gold); transform: scale(1.1); }
+.die-btn.active { background: rgba(201,162,39,0.3); border-color: var(--gold-bright); }
+
+.dice-result-display {
+  font-family: 'Cinzel', serif;
+  font-size: 2.5rem;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(201,162,39,0.6);
+  min-height: 3.5rem;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.dice-breakdown { font-size: 0.8rem; color: var(--stone-light); margin-top: 0.25rem; }
+
+.manual-roll-row { display: flex; gap: 0.5rem; align-items: center; }
+.manual-roll-row input { font-size: 1.1rem; text-align: center; width: 80px; }
+
+/* Initiative tracker */
+.initiative-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid rgba(201,162,39,0.15);
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+}
+.initiative-item.active-init { background: rgba(201,162,39,0.1); border-color: var(--gold); }
+.init-score { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--gold); min-width: 28px; text-align: right; }
+.init-name { flex: 1; }
+
+/* SETUP SCREEN */
+.setup-screen {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+.setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.player-setup-card {
+  background: rgba(20,16,28,0.9);
+  border: 1px solid rgba(201,162,39,0.2);
+  padding: 1rem;
+}
+
+/* Password screen */
+.auth-screen {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+}
+.auth-box {
+  background: linear-gradient(135deg, #1e1828, #14101c);
+  border: 2px solid var(--gold);
+  padding: 3rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(201,162,39,0.2), inset 0 0 60px rgba(0,0,0,0.5);
+}
+.auth-box h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+  animation: torchFlicker 3s ease-in-out infinite;
+}
+.auth-subtitle { color: var(--stone-light); margin-bottom: 2rem; font-style: italic; }
+.auth-error { color: var(--blood-bright); font-size: 0.9rem; margin-top: 0.75rem; min-height: 1.2rem; }
+
+/* Death overlay particles */
+.death-skull { font-size: 4rem; margin-bottom: 1rem; animation: diceRoll 1s ease-out; }
+.victory-crown { font-size: 4rem; margin-bottom: 1rem; animation: diceRoll 1s ease-out; }
+
+/* Room exits */
+.exits-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.exit-btn { font-size: 0.75rem; }
+
+/* Loot display */
+.loot-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(201,162,39,0.1);
+}
+.loot-item::before { content: '⚔'; font-size: 0.7rem; color: var(--gold); }
+
+@media (max-width: 1100px) {
+  .game-container { grid-template-columns: 220px 1fr 240px; }
+}
+@media (max-width: 850px) {
+  .game-container { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-brand">⚔ Depths Below</a>
+  <a href="index.html" class="active">Adventure</a>
+  <a href="characters.html">Characters</a>
+  <a href="map.html">Map</a>
+  <a href="rooms.html">Room Editor</a>
+</nav>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="auth-screen" style="display:none">
+  <div class="auth-box">
+    <div style="font-size:3rem;margin-bottom:1rem;animation:torchFlicker 2s infinite">🗡️</div>
+    <h1>DEPTHS BELOW</h1>
+    <p class="auth-subtitle">A dungeon crawl for the brave and the foolish</p>
+    <div style="margin-bottom:1rem">
+      <label>Enter the Password</label>
+      <input type="password" id="passwordInput" placeholder="Speak, friend, and enter..." style="text-align:center;font-size:1.1rem">
+    </div>
+    <button class="btn" onclick="doLogin()" style="width:100%">Enter the Dungeon</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen" style="display:none;flex:1">
+  <div class="setup-screen fade-in">
+    <div style="text-align:center;margin-bottom:2rem">
+      <h1 style="font-family:'Cinzel',serif;font-size:2.5rem;color:var(--gold);text-shadow:0 0 30px rgba(201,162,39,0.4)">ASSEMBLE YOUR PARTY</h1>
+      <p style="color:var(--stone-light);font-style:italic">Choose your champions before descending into darkness</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:1.5rem">
+      <div class="panel-title">Dungeon Settings</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem">
+        <div>
+          <label>Dungeon Level (1–20)</label>
+          <input type="number" id="dungeonLevel" min="1" max="20" value="3">
+        </div>
+        <div>
+          <label>Number of Players (1–6)</label>
+          <input type="number" id="numPlayers" min="1" max="6" value="4" oninput="updatePlayerSlots()">
+        </div>
+        <div>
+          <label>Dungeon Depth (Rooms)</label>
+          <input type="number" id="dungeonDepth" min="5" max="20" value="10">
+        </div>
+      </div>
+    </div>
+
+    <div id="playerSlotsSetup" class="setup-grid" style="margin-bottom:1.5rem"></div>
+
+    <div style="display:flex;gap:1rem;justify-content:center">
+      <button class="btn btn-success" onclick="startGame()" style="font-size:1rem;padding:0.8rem 2.5rem">⚔ Begin the Descent</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="gameScreen" style="display:none;flex:1;flex-direction:column">
+  <!-- Top bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1rem;background:rgba(0,0,0,0.4);border-bottom:1px solid rgba(201,162,39,0.15)">
+    <div style="font-family:'Cinzel',serif;font-size:0.85rem;color:var(--stone-light)">
+      Room <span id="roomCounter" style="color:var(--gold)">1</span> / <span id="totalRooms" style="color:var(--gold)">?</span>
+      &nbsp;·&nbsp; Depth: <span id="dungeonDepthDisplay" style="color:var(--gold)">—</span>
+      &nbsp;·&nbsp; Turn: <span id="turnCounter" style="color:var(--gold)">0</span>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-sm" onclick="goToMap()">🗺 Map</button>
+      <button class="btn btn-sm btn-danger" onclick="confirmEndRun()">☠ End Run</button>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <!-- LEFT: Players -->
+    <div class="players-panel">
+      <div class="panel" style="padding:1rem">
+        <div class="panel-title">Party</div>
+        <div id="playerCards"></div>
+      </div>
+      <div class="panel" style="padding:1rem">
+        <div class="panel-title">Initiative</div>
+        <div id="initiativeList"></div>
+        <button class="btn btn-sm" onclick="rollInitiative()" style="width:100%;margin-top:0.5rem">Roll Initiative</button>
+        <button class="btn btn-sm" onclick="nextTurn()" style="width:100%;margin-top:0.3rem">Next Turn →</button>
+      </div>
+    </div>
+
+    <!-- CENTER: Room -->
+    <div class="room-panel">
+      <div id="roomDisplay" class="room-header">
+        <div style="color:var(--stone-light);font-style:italic;text-align:center;padding:2rem">
+          Loading dungeon...
+        </div>
+      </div>
+
+      <div id="combatSection" style="display:none">
+        <div class="panel combat-area">
+          <div class="panel-title" style="color:var(--blood-bright)">⚔ Combat Encounter</div>
+          <div id="monsterList"></div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem">
+            <button class="btn btn-sm btn-danger" onclick="attackMonster()">Attack</button>
+            <button class="btn btn-sm" onclick="castSpell()">Cast Spell</button>
+            <button class="btn btn-sm" onclick="useAbility()">Use Ability</button>
+            <button class="btn btn-sm btn-success" onclick="flee()">Flee</button>
+          </div>
+          <div style="margin-top:0.75rem;font-size:0.82rem;color:var(--stone-light)" id="combatStatus"></div>
+        </div>
+      </div>
+
+      <div id="puzzleSection" style="display:none">
+        <div class="panel puzzle-area">
+          <div class="panel-title" style="color:#7b68ee">🔮 Puzzle</div>
+          <div class="puzzle-question" id="puzzleQuestion"></div>
+          <div id="puzzleHint" style="display:none;font-size:0.85rem;color:var(--stone-light);font-style:italic;margin-bottom:0.75rem"></div>
+          <div class="puzzle-input-row">
+            <input type="text" id="puzzleAnswerInput" placeholder="Your answer..." class="puzzle-answer" onkeydown="if(event.key==='Enter')checkPuzzle()">
+            <button class="btn btn-sm" onclick="checkPuzzle()">Answer</button>
+            <button class="btn btn-sm" onclick="showHint()">Hint</button>
+            <button class="btn btn-sm btn-danger" onclick="failPuzzle()">Give Up</button>
+          </div>
+          <div id="puzzleResult" style="margin-top:0.5rem;min-height:1.2rem"></div>
+        </div>
+      </div>
+
+      <div id="treasureSection" style="display:none">
+        <div class="panel" style="border-color:rgba(201,162,39,0.4)">
+          <div class="panel-title">💰 Treasure Found</div>
+          <div id="treasureList"></div>
+          <button class="btn btn-sm btn-success" onclick="collectTreasure()" style="margin-top:0.75rem">Collect All</button>
+        </div>
+      </div>
+
+      <div id="exitsSection" class="panel">
+        <div class="panel-title">Exits</div>
+        <div class="exits-row" id="exitButtons"></div>
+        <div style="margin-top:0.75rem">
+          <button class="btn btn-sm btn-success" onclick="clearRoom()" id="clearRoomBtn">✓ Room Cleared — Advance</button>
+        </div>
+      </div>
+
+      <div class="panel log-panel">
+        <div class="panel-title">Adventure Log</div>
+        <div class="log-entries" id="logEntries"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Dice + Actions -->
+    <div class="actions-panel">
+      <div class="panel dice-area">
+        <div class="panel-title">Dice Vault</div>
+        <div class="dice-row">
+          <button class="die-btn" onclick="rollDie(4,'d4')">d4</button>
+          <button class="die-btn" onclick="rollDie(6,'d6')">d6</button>
+          <button class="die-btn" onclick="rollDie(8,'d8')">d8</button>
+          <button class="die-btn" onclick="rollDie(10,'d10')">d10</button>
+          <button class="die-btn" onclick="rollDie(12,'d12')">d12</button>
+          <button class="die-btn" onclick="rollDie(20,'d20')">d20</button>
+          <button class="die-btn" onclick="rollDie(100,'d100')">%</button>
+        </div>
+        <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--stone-light)">Quantity:</div>
+        <div style="display:flex;gap:0.25rem;justify-content:center;margin-bottom:0.75rem" id="diceQtyRow">
+          <button class="btn btn-sm" onclick="setQty(1)" id="qty1" style="padding:0.3rem 0.6rem">1</button>
+          <button class="btn btn-sm" onclick="setQty(2)" id="qty2" style="padding:0.3rem 0.6rem">2</button>
+          <button class="btn btn-sm" onclick="setQty(3)" id="qty3" style="padding:0.3rem 0.6rem">3</button>
+          <button class="btn btn-sm" onclick="setQty(4)" id="qty4" style="padding:0.3rem 0.6rem">4</button>
+        </div>
+        <div class="dice-result-display" id="diceResult">—</div>
+        <div class="dice-breakdown" id="diceBreakdown"></div>
+        <hr class="divider">
+        <div style="font-size:0.75rem;color:var(--stone-light);margin-bottom:0.5rem">Manual Roll</div>
+        <div class="manual-roll-row">
+          <input type="number" id="manualRollInput" placeholder="e.g. 17" min="1" max="100">
+          <button class="btn btn-sm" onclick="useManualRoll()">Use</button>
+        </div>
+        <div id="lastRoll" style="font-size:0.8rem;color:var(--stone-light);margin-top:0.4rem"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem">
+          <button class="btn btn-sm btn-success" onclick="useHealingPotion()">🧪 Healing Potion</button>
+          <button class="btn btn-sm" onclick="shortRest()">💤 Short Rest</button>
+          <button class="btn btn-sm" onclick="longRest()">🌙 Long Rest</button>
+          <button class="btn btn-sm" onclick="searchRoom()">🔍 Search Room</button>
+          <button class="btn btn-sm" onclick="openDoor()">🚪 Force Door</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Session Loot</div>
+        <div id="sessionLootList" style="max-height:150px;overflow-y:auto;font-size:0.82rem"></div>
+        <div style="margin-top:0.5rem;font-size:0.78rem;color:var(--stone-light)">
+          Total XP: <span id="totalXPDisplay" style="color:var(--gold)">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="deathModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="death-skull">💀</div>
+    <h2 style="color:var(--blood-bright)">THE PARTY FALLS</h2>
+    <p>The darkness claims your heroes. Their tale ends here in the depths, their bones joining the countless others who dared descend.</p>
+    <p style="font-size:0.9rem;color:var(--stone-light);font-style:italic">"Not all who enter the dungeon return."</p>
+    <button class="btn btn-danger" onclick="endRunAndReset()" style="margin-top:1rem;width:100%">Return to the Surface</button>
+  </div>
+</div>
+
+<div id="victoryModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <div class="victory-crown">👑</div>
+    <h2>DUNGEON CONQUERED!</h2>
+    <p>The depths yield to your might. Your party emerges victorious, laden with glory and treasure beyond measure!</p>
+    <div id="victoryStats" style="background:rgba(0,0,0,0.3);padding:1rem;margin:1rem 0;font-size:0.9rem"></div>
+    <button class="btn btn-success" onclick="endRunAndReset()" style="width:100%">Claim Your Victory</button>
+  </div>
+</div>
+
+<div id="endRunModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <h2 style="color:var(--blood-bright)">⚠ Abandon the Dungeon?</h2>
+    <p>Your party will retreat to the surface. All progress in this run will be lost. Character sheets will be updated with XP gained.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem">
+      <button class="btn btn-danger" onclick="endRunAndReset()">Yes, Retreat</button>
+      <button class="btn" onclick="closeModal('endRunModal')">Continue Fighting</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span> &nbsp;·&nbsp; <a href="thanks.html" class="copyright" title="">©</a></span>
+</footer>
+
+<script src="engine.js"></script>
+<script>
+const E = DungeonEngine;
+let gameState, diceQty = 1, lastRoll = null;
+let currentEncounter = null, currentPuzzle = null, currentTreasure = null;
+let initiativeOrder = [], currentInitiative = 0;
+
+// ---- INIT ----
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+function init() {
+  if (!E.AUTH.check()) {
+    showScreen('authScreen');
+    document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  } else {
+    gameState = E.getState();
+    if (gameState.started) {
+      showScreen('gameScreen');
+      renderGame();
+    } else {
+      showScreen('setupScreen');
+      updatePlayerSlots();
+    }
+  }
+}
+
+function showScreen(id) {
+  ['authScreen','setupScreen','gameScreen'].forEach(s => {
+    const el = document.getElementById(s);
+    el.style.display = s === id ? (s === 'gameScreen' ? 'flex' : 'flex') : 'none';
+  });
+}
+
+// ---- AUTH ----
+function doLogin() {
+  const pw = document.getElementById('passwordInput').value;
+  if (E.AUTH.login(pw)) {
+    gameState = E.getState();
+    showScreen('setupScreen');
+    updatePlayerSlots();
+  } else {
+    document.getElementById('authError').textContent = 'Incorrect password. The dungeon remains sealed.';
+    document.getElementById('passwordInput').value = '';
+  }
+}
+
+// ---- SETUP ----
+function updatePlayerSlots() {
+  const n = parseInt(document.getElementById('numPlayers').value) || 4;
+  const chars = E.getCharacters();
+  const container = document.getElementById('playerSlotsSetup');
+  container.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'player-setup-card';
+    slot.innerHTML = `
+      <div style="font-family:'Cinzel',serif;font-size:0.85rem;color:var(--gold);margin-bottom:0.75rem">Player ${i+1}</div>
+      <div style="margin-bottom:0.5rem">
+        <label>Load Character Sheet</label>
+        <select id="charSelect_${i}" onchange="loadCharacterInSlot(${i})">
+          <option value="">— Manual Entry —</option>
+          ${chars.map(c => `<option value="${c.id}">${c.name} (${c.class} ${c.level})</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+        <div><label>Name</label><input type="text" id="pName_${i}" placeholder="Hero name..."></div>
+        <div><label>Class</label><select id="pClass_${i}">${E.D5E.classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Level</label><input type="number" id="pLevel_${i}" min="1" max="20" value="1"></div>
+        <div><label>Max HP</label><input type="number" id="pHP_${i}" min="1" value="10"></div>
+        <div><label>AC</label><input type="number" id="pAC_${i}" min="1" value="10"></div>
+      </div>
+    `;
+    container.appendChild(slot);
+  }
+}
+
+function loadCharacterInSlot(i) {
+  const sel = document.getElementById(`charSelect_${i}`).value;
+  if (!sel) return;
+  const char = E.getCharacters().find(c => c.id === sel);
+  if (!char) return;
+  document.getElementById(`pName_${i}`).value = char.name;
+  document.getElementById(`pClass_${i}`).value = char.class;
+  document.getElementById(`pLevel_${i}`).value = char.level;
+  document.getElementById(`pHP_${i}`).value = char.maxHP;
+  document.getElementById(`pAC_${i}`).value = char.ac;
+}
+
+function startGame() {
+  const n = parseInt(document.getElementById('numPlayers').value) || 4;
+  const dungeonLevel = parseInt(document.getElementById('dungeonLevel').value) || 3;
+  const players = [];
+  for (let i = 0; i < n; i++) {
+    const name = document.getElementById(`pName_${i}`).value || `Hero ${i+1}`;
+    const charId = document.getElementById(`charSelect_${i}`).value;
+    players.push({
+      id: charId || `p_${i}_${Date.now()}`,
+      name,
+      class: document.getElementById(`pClass_${i}`).value,
+      level: parseInt(document.getElementById(`pLevel_${i}`).value) || 1,
+      maxHP: parseInt(document.getElementById(`pHP_${i}`).value) || 10,
+      currentHP: parseInt(document.getElementById(`pHP_${i}`).value) || 10,
+      ac: parseInt(document.getElementById(`pAC_${i}`).value) || 10,
+      charSheetId: charId || null,
+    });
+  }
+
+  const mapRooms = E.generateMap(players, dungeonLevel);
+  gameState = {
+    ...E.getDefaultState(),
+    started: true,
+    players,
+    dungeonLevel,
+    mapRooms,
+    currentRoom: 0,
+    visitedRooms: [0],
+    log: [],
+    totalXP: 0,
+  };
+  E.addLog(gameState, `The party descends into the dungeon. ${players.map(p=>p.name).join(', ')} begin their adventure.`, 'info');
+  E.setState(gameState);
+  showScreen('gameScreen');
+  renderGame();
+}
+
+// ---- GAME RENDER ----
+function renderGame() {
+  gameState = E.getState();
+  renderPlayers();
+  renderRoom();
+  renderLog();
+  renderSessionLoot();
+  document.getElementById('roomCounter').textContent = gameState.currentRoom + 1;
+  document.getElementById('totalRooms').textContent = gameState.mapRooms.length;
+  document.getElementById('dungeonDepthDisplay').textContent = `Level ${gameState.dungeonLevel}`;
+  document.getElementById('turnCounter').textContent = gameState.turn;
+  document.getElementById('totalXPDisplay').textContent = gameState.totalXP;
+  checkWinLose();
+}
+
+function renderPlayers() {
+  const container = document.getElementById('playerCards');
+  container.innerHTML = '';
+  gameState.players.forEach((p, i) => {
+    const pct = Math.max(0, (p.currentHP / p.maxHP) * 100);
+    const isDead = p.currentHP <= 0;
+    const div = document.createElement('div');
+    div.className = `player-card ${isDead ? 'dead' : ''}`;
+    div.innerHTML = `
+      <div class="player-name">${p.name}</div>
+      <div class="player-meta">${p.class} · Lv. ${p.level}</div>
+      <div class="player-hp">${isDead ? '💀 Dead' : `HP: ${p.currentHP} / ${p.maxHP}`}${p.tempHP > 0 ? ` (+${p.tempHP} temp)` : ''} · AC ${p.ac}</div>
+      ${!isDead ? `<div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${pct}%;background:${pct > 50 ? 'linear-gradient(90deg,#1a6b3a,#27ae60)' : pct > 25 ? 'linear-gradient(90deg,#8b6914,#c9a227)' : 'linear-gradient(90deg,#5a0a0a,#c0392b)'}"></div></div>` : ''}
+      ${!isDead ? `<div style="display:flex;gap:0.25rem;margin-top:0.5rem">
+        <button class="btn btn-sm btn-danger" onclick="damagePlayer(${i})" style="font-size:0.65rem;padding:0.2rem 0.5rem">Dmg</button>
+        <button class="btn btn-sm btn-success" onclick="healPlayer(${i})" style="font-size:0.65rem;padding:0.2rem 0.5rem">Heal</button>
+        <button class="btn btn-sm" onclick="viewPlayer(${i})" style="font-size:0.65rem;padding:0.2rem 0.5rem">⚔</button>
+      </div>` : `<button class="btn btn-sm btn-success" onclick="revivePlayer(${i})" style="font-size:0.65rem;margin-top:0.4rem">Revive</button>`}
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderRoom() {
+  const room = gameState.mapRooms[gameState.currentRoom];
+  if (!room) return;
+  const typeLabels = {combat:'⚔ Combat',puzzle:'🔮 Puzzle',treasure:'💰 Treasure',exploration:'🔍 Exploration',boss:'💀 Boss Encounter',social:'💬 Social'};
+  document.getElementById('roomDisplay').innerHTML = `
+    <div class="room-type-badge type-${room.type}">${typeLabels[room.type] || room.type}</div>
+    <div class="room-title">${room.name}</div>
+    <div class="room-description">${room.description}</div>
+    <div class="room-flavor">${room.flavor}</div>
+    ${room.cleared ? '<div style="margin-top:0.75rem"><span class="tag tag-emerald">✓ Cleared</span></div>' : ''}
+  `;
+
+  // Room sections
+  document.getElementById('combatSection').style.display = 'none';
+  document.getElementById('puzzleSection').style.display = 'none';
+  document.getElementById('treasureSection').style.display = 'none';
+
+  if (!room.cleared) {
+    if (room.type === 'combat' || room.type === 'boss') setupCombat(room);
+    else if (room.type === 'puzzle') setupPuzzle(room);
+    else if (room.type === 'treasure') setupTreasure(room);
+  }
+
+  // Exits
+  const connections = room.connections || [];
+  const exitContainer = document.getElementById('exitButtons');
+  exitContainer.innerHTML = connections.map((idx, i) => {
+    const destRoom = gameState.mapRooms[idx];
+    const dirs = ['North','East','South','West','Northeast','Northwest'];
+    return `<button class="btn exit-btn" onclick="moveToRoom(${idx})">${dirs[i % dirs.length]}: ${destRoom ? destRoom.name : 'Unknown'}</button>`;
+  }).join('');
+
+  document.getElementById('clearRoomBtn').style.display = room.cleared ? 'block' : 'none';
+}
+
+function setupCombat(room) {
+  if (!currentEncounter || currentEncounter.roomId !== room.id) {
+    currentEncounter = {
+      roomId: room.id,
+      ...E.generateEncounter(room, gameState.players, gameState.dungeonLevel)
+    };
+  }
+  document.getElementById('combatSection').style.display = 'block';
+  renderMonsters();
+}
+
+function renderMonsters() {
+  if (!currentEncounter) return;
+  const list = document.getElementById('monsterList');
+  list.innerHTML = currentEncounter.monsters.map(m => `
+    <div class="monster-card ${m.currentHP <= 0 ? 'dead' : ''}" id="mon_${m.id}">
+      <div>
+        <div class="monster-name">${m.name} <span style="font-size:0.72rem;color:var(--stone-light)">(CR ${m.cr})</span></div>
+        <div class="monster-info">AC ${m.ac} · Atk ${m.attack} · ${m.damage} dmg</div>
+        ${m.currentHP > 0 ? `<div class="hp-bar-bg" style="width:120px;margin-top:3px"><div class="hp-bar-fill" style="width:${(m.currentHP/m.maxHP)*100}%"></div></div>` : ''}
+      </div>
+      <div style="text-align:right;min-width:70px">
+        <div style="font-family:'Cinzel',serif;color:${m.currentHP>0?'var(--parchment)':'var(--stone-light)'}">
+          ${m.currentHP <= 0 ? '💀 Slain' : `${m.currentHP}/${m.maxHP}`}
+        </div>
+        <div style="font-size:0.72rem;color:var(--stone-light)">${m.xp} XP</div>
+      </div>
+    </div>
+  `).join('');
+
+  const allDead = currentEncounter.monsters.every(m => m.currentHP <= 0);
+  document.getElementById('combatStatus').textContent = allDead ? '✓ All enemies defeated! Claim your reward.' : `Difficulty: ${currentEncounter.difficulty?.toUpperCase() || ''} · ${currentEncounter.monsters.filter(m=>m.currentHP>0).length} enemies remaining`;
+
+  if (allDead) {
+    // Auto-award XP and loot
+    const xpEach = currentEncounter.xpReward || 50;
+    awardXPAndLoot(xpEach);
+    document.getElementById('clearRoomBtn').style.display = 'block';
+  }
+}
+
+function setupPuzzle(room) {
+  if (!room.puzzle) return;
+  currentPuzzle = room.puzzle;
+  document.getElementById('puzzleSection').style.display = 'block';
+  document.getElementById('puzzleQuestion').textContent = room.puzzle.question;
+  document.getElementById('puzzleResult').textContent = '';
+  document.getElementById('puzzleAnswerInput').value = '';
+  document.getElementById('puzzleHint').style.display = 'none';
+}
+
+function setupTreasure(room) {
+  const lootCount = 2 + E.DICE.roll(3);
+  currentTreasure = Array.from({length: lootCount}, () => E.D5E.getLootByLevel(gameState.dungeonLevel));
+  document.getElementById('treasureSection').style.display = 'block';
+  document.getElementById('treasureList').innerHTML = currentTreasure.map(item =>
+    `<div class="loot-item">${item}</div>`
+  ).join('');
+}
+
+function renderLog() {
+  const container = document.getElementById('logEntries');
+  container.innerHTML = (gameState.log || []).map(entry => `
+    <div class="log-entry ${entry.type}" style="animation:fadeIn 0.3s ease-out">
+      <span style="color:var(--stone-light);font-size:0.75rem">[${entry.time || ''}]</span> ${entry.text}
+    </div>
+  `).join('');
+}
+
+function renderSessionLoot() {
+  const list = document.getElementById('sessionLootList');
+  const loot = gameState.loot || [];
+  list.innerHTML = loot.length === 0
+    ? '<span style="color:var(--stone-light);font-style:italic">No loot yet...</span>'
+    : loot.map(item => `<div class="loot-item">${item}</div>`).join('');
+}
+
+// ---- COMBAT ACTIONS ----
+function attackMonster() {
+  if (!currentEncounter) return;
+  const alive = currentEncounter.monsters.filter(m => m.currentHP > 0);
+  if (!alive.length) return;
+  const target = alive[0];
+  const attackRoll = lastRoll || E.DICE.roll(20);
+  const dmg = E.DICE.rollSum(1, 8) + 3;
+  if (attackRoll >= target.ac) {
+    target.currentHP = Math.max(0, target.currentHP - dmg);
+    E.addLog(gameState, `Attack hits ${target.name} for ${dmg} damage! (Roll: ${attackRoll})`, 'combat');
+    if (target.currentHP <= 0) {
+      E.addLog(gameState, `${target.name} is slain!`, 'success');
+    }
+  } else {
+    E.addLog(gameState, `Attack misses ${target.name}! (Roll: ${attackRoll} vs AC ${target.ac})`, 'combat');
+  }
+  lastRoll = null;
+  document.getElementById('lastRoll').textContent = '';
+  monsterCounterAttack();
+  E.setState(gameState);
+  renderMonsters();
+  renderLog();
+}
+
+function monsterCounterAttack() {
+  const alive = currentEncounter.monsters.filter(m => m.currentHP > 0);
+  if (!alive.length) return;
+  const alivePlayers = gameState.players.filter(p => p.currentHP > 0);
+  if (!alivePlayers.length) return;
+  alive.forEach(monster => {
+    const target = alivePlayers[E.DICE.roll(alivePlayers.length) - 1];
+    const atk = parseInt(monster.attack) || 4;
+    const roll = E.DICE.roll(20) + atk;
+    if (roll >= target.ac) {
+      const dmgParts = monster.damage.split('+');
+      const [nd, ds] = (dmgParts[0]).split('d');
+      const bonus = parseInt(dmgParts[1]) || 0;
+      const dmg = E.DICE.rollSum(parseInt(nd)||1, parseInt(ds)||6) + bonus;
+      target.currentHP = Math.max(0, target.currentHP - dmg);
+      E.addLog(gameState, `${monster.name} attacks ${target.name} for ${dmg} damage!`, 'combat');
+      if (target.currentHP <= 0) E.addLog(gameState, `${target.name} has fallen!`, 'combat');
+    } else {
+      E.addLog(gameState, `${monster.name} attacks ${target.name} but misses.`, 'info');
+    }
+  });
+  gameState.turn++;
+  renderPlayers();
+  checkWinLose();
+}
+
+function castSpell() {
+  E.addLog(gameState, `A spell is cast! Roll damage and apply manually.`, 'info');
+  E.setState(gameState);
+  renderLog();
+}
+
+function useAbility() {
+  E.addLog(gameState, `Special ability used. Apply effects as appropriate.`, 'info');
+  E.setState(gameState);
+  renderLog();
+}
+
+function flee() {
+  const roll = E.DICE.roll(20);
+  if (roll >= 10) {
+    E.addLog(gameState, `The party flees successfully! (Roll: ${roll})`, 'warning');
+    currentEncounter = null;
+    document.getElementById('combatSection').style.display = 'none';
+    moveToRoom(gameState.mapRooms[gameState.currentRoom].connections[0]);
+  } else {
+    E.addLog(gameState, `Escape attempt fails! (Roll: ${roll}) The monsters strike as you flee!`, 'combat');
+    monsterCounterAttack();
+    E.setState(gameState);
+    renderLog();
+  }
+}
+
+// ---- PUZZLE ACTIONS ----
+function checkPuzzle() {
+  if (!currentPuzzle) return;
+  const answer = document.getElementById('puzzleAnswerInput').value.trim().toLowerCase();
+  const correct = currentPuzzle.answer.toLowerCase();
+  if (answer === correct || answer.includes(correct) || correct.includes(answer)) {
+    document.getElementById('puzzleResult').innerHTML = '<span style="color:var(--emerald-bright)">✓ Correct! The magic yields.</span>';
+    E.addLog(gameState, 'Puzzle solved! The way forward opens.', 'success');
+    if (currentPuzzle.successLoot) {
+      const loot = E.D5E.getLootByLevel(gameState.dungeonLevel);
+      gameState.loot.push(loot);
+      E.addLog(gameState, `Reward found: ${loot}`, 'loot');
+    }
+    awardXPAndLoot(50 * gameState.dungeonLevel);
+    document.getElementById('clearRoomBtn').style.display = 'block';
+    document.getElementById('puzzleSection').style.display = 'none';
+  } else {
+    document.getElementById('puzzleResult').innerHTML = '<span style="color:var(--blood-bright)">✗ Incorrect. The dungeon does not yield easily.</span>';
+    E.addLog(gameState, 'Puzzle answer incorrect.', 'warning');
+  }
+  E.setState(gameState);
+  renderLog();
+  renderSessionLoot();
+}
+
+function showHint() {
+  if (!currentPuzzle) return;
+  document.getElementById('puzzleHint').textContent = 'Hint: ' + currentPuzzle.hint;
+  document.getElementById('puzzleHint').style.display = 'block';
+}
+
+function failPuzzle() {
+  if (!currentPuzzle) return;
+  const trap = currentPuzzle.failureTrap;
+  const dmg = trap ? E.DICE.rollSum(parseInt(trap.damage.split('d')[0]), parseInt(trap.damage.split('d')[1])) : 5;
+  gameState.players.filter(p => p.currentHP > 0).forEach(p => {
+    p.currentHP = Math.max(0, p.currentHP - Math.ceil(dmg / gameState.players.filter(pl=>pl.currentHP>0).length));
+  });
+  E.addLog(gameState, `Puzzle failed! ${trap ? `${trap.type} trap triggers for ${dmg} damage!` : `Trap deals ${dmg} damage!`}`, 'combat');
+  document.getElementById('clearRoomBtn').style.display = 'block';
+  document.getElementById('puzzleSection').style.display = 'none';
+  E.setState(gameState);
+  renderPlayers();
+  renderLog();
+  checkWinLose();
+}
+
+// ---- TREASURE ----
+function collectTreasure() {
+  if (!currentTreasure) return;
+  currentTreasure.forEach(item => gameState.loot.push(item));
+  E.addLog(gameState, `Treasure collected: ${currentTreasure.join(', ')}`, 'loot');
+  awardXPAndLoot(30 * gameState.dungeonLevel, false);
+  document.getElementById('treasureSection').style.display = 'none';
+  document.getElementById('clearRoomBtn').style.display = 'block';
+  currentTreasure = null;
+  E.setState(gameState);
+  renderLog();
+  renderSessionLoot();
+}
+
+function awardXPAndLoot(xpEach, addLoot = true) {
+  const xpTotal = xpEach * gameState.players.filter(p=>p.currentHP>0).length;
+  gameState.totalXP += xpTotal;
+  gameState.players.forEach(p => { if(p.currentHP>0) p.xpGained = (p.xpGained||0) + xpEach; });
+  if (addLoot) {
+    const loot = E.D5E.getLootByLevel(gameState.dungeonLevel);
+    gameState.loot.push(loot);
+    E.addLog(gameState, `Loot: ${loot}`, 'loot');
+  }
+  E.addLog(gameState, `${xpEach} XP awarded to each surviving member.`, 'success');
+  document.getElementById('totalXPDisplay').textContent = gameState.totalXP;
+  renderSessionLoot();
+}
+
+// ---- PLAYER ACTIONS ----
+function damagePlayer(i) {
+  const dmg = parseInt(prompt(`Damage for ${gameState.players[i].name}:`)) || 0;
+  if (dmg > 0) {
+    gameState.players[i].currentHP = Math.max(0, gameState.players[i].currentHP - dmg);
+    E.addLog(gameState, `${gameState.players[i].name} takes ${dmg} damage.`, 'combat');
+    E.setState(gameState);
+    renderPlayers();
+    renderLog();
+    checkWinLose();
+  }
+}
+
+function healPlayer(i) {
+  const heal = parseInt(prompt(`Healing for ${gameState.players[i].name}:`)) || 0;
+  if (heal > 0) {
+    gameState.players[i].currentHP = Math.min(gameState.players[i].maxHP, gameState.players[i].currentHP + heal);
+    E.addLog(gameState, `${gameState.players[i].name} is healed for ${heal} HP.`, 'success');
+    E.setState(gameState);
+    renderPlayers();
+    renderLog();
+  }
+}
+
+function revivePlayer(i) {
+  gameState.players[i].currentHP = 1;
+  E.addLog(gameState, `${gameState.players[i].name} is revived with 1 HP!`, 'success');
+  E.setState(gameState);
+  renderPlayers();
+  renderLog();
+}
+
+function viewPlayer(i) {
+  const p = gameState.players[i];
+  const info = `${p.name}\n${p.class} Level ${p.level}\nHP: ${p.currentHP}/${p.maxHP}\nAC: ${p.ac}\nXP gained: ${p.xpGained||0}`;
+  alert(info);
+}
+
+// ---- QUICK ACTIONS ----
+function useHealingPotion() {
+  const alive = gameState.players.filter(p => p.currentHP > 0 && p.currentHP < p.maxHP);
+  if (!alive.length) { E.addLog(gameState, 'No one needs healing right now.', 'info'); E.setState(gameState); renderLog(); return; }
+  const target = alive.sort((a,b) => (a.currentHP/a.maxHP) - (b.currentHP/b.maxHP))[0];
+  const heal = E.DICE.rollSum(2, 4) + 2;
+  target.currentHP = Math.min(target.maxHP, target.currentHP + heal);
+  E.addLog(gameState, `${target.name} drinks a healing potion and recovers ${heal} HP.`, 'success');
+  E.setState(gameState);
+  renderPlayers();
+  renderLog();
+}
+
+function shortRest() {
+  gameState.players.filter(p => p.currentHP > 0).forEach(p => {
+    const hd = E.D5E.hitDice[p.class] || 8;
+    const heal = E.DICE.rollSum(1, hd) + E.DICE.modifier(p.con || 10);
+    p.currentHP = Math.min(p.maxHP, p.currentHP + Math.max(1, heal));
+  });
+  E.addLog(gameState, 'The party takes a short rest. Hit dice spent.', 'success');
+  E.setState(gameState);
+  renderPlayers();
+  renderLog();
+}
+
+function longRest() {
+  gameState.players.forEach(p => { p.currentHP = p.maxHP; });
+  E.addLog(gameState, 'The party takes a long rest. All HP restored!', 'success');
+  E.setState(gameState);
+  renderPlayers();
+  renderLog();
+}
+
+function searchRoom() {
+  const roll = E.DICE.roll(20);
+  if (roll >= 12) {
+    const find = E.D5E.getLootByLevel(gameState.dungeonLevel);
+    gameState.loot.push(find);
+    E.addLog(gameState, `Search successful! (${roll}) Found: ${find}`, 'loot');
+    renderSessionLoot();
+  } else if (roll >= 6) {
+    E.addLog(gameState, `Search finds nothing of note. (${roll})`, 'info');
+  } else {
+    E.addLog(gameState, `Search triggers a hidden trap! Take 1d6 damage. (${roll})`, 'combat');
+    const target = gameState.players.filter(p=>p.currentHP>0)[0];
+    if (target) { target.currentHP = Math.max(0, target.currentHP - E.DICE.roll(6)); renderPlayers(); checkWinLose(); }
+  }
+  E.setState(gameState);
+  renderLog();
+}
+
+function openDoor() {
+  const roll = E.DICE.roll(20);
+  E.addLog(gameState, roll >= 10 ? `Force check succeeds! (${roll}) The door yields.` : `Force check fails. (${roll}) The door holds firm.`, roll>=10?'success':'warning');
+  E.setState(gameState);
+  renderLog();
+}
+
+// ---- MOVEMENT ----
+function moveToRoom(idx) {
+  if (idx === undefined || idx === null) return;
+  gameState.currentRoom = idx;
+  if (!gameState.visitedRooms.includes(idx)) gameState.visitedRooms.push(idx);
+  const room = gameState.mapRooms[idx];
+  if (room) room.visited = true;
+  currentEncounter = null;
+  currentPuzzle = null;
+  currentTreasure = null;
+  E.addLog(gameState, `The party moves to: ${room ? room.name : 'Unknown Room'}`, 'info');
+  E.setState(gameState);
+  renderGame();
+}
+
+function clearRoom() {
+  const room = gameState.mapRooms[gameState.currentRoom];
+  if (room) room.cleared = true;
+  currentEncounter = null;
+  E.addLog(gameState, `Room cleared: ${room ? room.name : ''}`, 'success');
+  // Check if boss room cleared = victory
+  if (room && room.isBoss) {
+    showVictory();
+    return;
+  }
+  E.setState(gameState);
+  renderRoom();
+}
+
+// ---- INITIATIVE ----
+function rollInitiative() {
+  initiativeOrder = [
+    ...gameState.players.filter(p=>p.currentHP>0).map(p => ({
+      name: p.name, score: E.DICE.roll(20), isPlayer: true
+    })),
+    ...(currentEncounter ? currentEncounter.monsters.filter(m=>m.currentHP>0).map(m => ({
+      name: m.name, score: m.initiative || E.DICE.roll(20), isPlayer: false
+    })) : [])
+  ].sort((a,b) => b.score - a.score);
+  currentInitiative = 0;
+  renderInitiative();
+  E.addLog(gameState, `Initiative rolled! Order: ${initiativeOrder.map(i=>i.name).join(', ')}`, 'info');
+  E.setState(gameState);
+  renderLog();
+}
+
+function nextTurn() {
+  if (!initiativeOrder.length) return;
+  currentInitiative = (currentInitiative + 1) % initiativeOrder.length;
+  gameState.turn++;
+  renderInitiative();
+  document.getElementById('turnCounter').textContent = gameState.turn;
+  E.setState(gameState);
+}
+
+function renderInitiative() {
+  const list = document.getElementById('initiativeList');
+  if (!initiativeOrder.length) { list.innerHTML = '<div style="font-size:0.8rem;color:var(--stone-light);font-style:italic">No initiative rolled</div>'; return; }
+  list.innerHTML = initiativeOrder.map((item, i) => `
+    <div class="initiative-item ${i === currentInitiative ? 'active-init' : ''}">
+      <div class="init-score">${item.score}</div>
+      <div class="init-name" style="color:${item.isPlayer ? 'var(--parchment)' : 'var(--blood-bright)'}">${i === currentInitiative ? '▶ ' : ''}${item.name}</div>
+    </div>
+  `).join('');
+}
+
+// ---- DICE ----
+function setQty(n) {
+  diceQty = n;
+  [1,2,3,4].forEach(i => document.getElementById(`qty${i}`).style.borderColor = i===n ? 'var(--gold)' : 'rgba(201,162,39,0.3)');
+}
+
+function rollDie(sides, label) {
+  const rolls = Array.from({length: diceQty}, () => E.DICE.roll(sides));
+  const total = rolls.reduce((a,b)=>a+b,0);
+  lastRoll = total;
+  const display = document.getElementById('diceResult');
+  display.textContent = '...';
+  display.style.animation = 'none';
+  setTimeout(() => {
+    display.style.animation = 'diceRoll 0.5s ease-out';
+    display.textContent = total;
+    document.getElementById('diceBreakdown').textContent = diceQty > 1 ? `${diceQty}${label} [${rolls.join(', ')}]` : `${label}`;
+    document.getElementById('lastRoll').textContent = `Last: ${total}`;
+  }, 50);
+}
+
+function useManualRoll() {
+  const val = parseInt(document.getElementById('manualRollInput').value);
+  if (!val || val < 1) return;
+  lastRoll = val;
+  document.getElementById('diceResult').textContent = val;
+  document.getElementById('diceBreakdown').textContent = 'Manual entry';
+  document.getElementById('lastRoll').textContent = `Last: ${val}`;
+  document.getElementById('manualRollInput').value = '';
+}
+
+// ---- WIN/LOSE ----
+function checkWinLose() {
+  const allDead = gameState.players.every(p => p.currentHP <= 0);
+  if (allDead) {
+    E.addLog(gameState, 'All players have fallen. The dungeon claims victory.', 'combat');
+    E.setState(gameState);
+    setTimeout(() => { document.getElementById('deathModal').style.display = 'flex'; }, 500);
+  }
+}
+
+function showVictory() {
+  const stats = document.getElementById('victoryStats');
+  const survivors = gameState.players.filter(p => p.currentHP > 0).length;
+  stats.innerHTML = `
+    <div>Survivors: ${survivors} / ${gameState.players.length}</div>
+    <div>Total XP: ${gameState.totalXP}</div>
+    <div>Loot Items: ${gameState.loot.length}</div>
+    <div>Rooms Cleared: ${gameState.mapRooms.filter(r=>r.cleared).length} / ${gameState.mapRooms.length}</div>
+  `;
+  document.getElementById('victoryModal').style.display = 'flex';
+}
+
+function confirmEndRun() { document.getElementById('endRunModal').style.display = 'flex'; }
+
+function endRunAndReset() {
+  // Save XP/loot back to character sheets
+  const chars = E.getCharacters();
+  gameState.players.forEach(p => {
+    if (p.charSheetId) {
+      const char = chars.find(c => c.id === p.charSheetId);
+      if (char) {
+        char.xp = (char.xp || 0) + (p.xpGained || 0);
+        char.currentHP = p.currentHP;
+        const newLoot = gameState.loot.filter((_, i) => i % gameState.players.length === gameState.players.indexOf(p));
+        char.loot = [...(char.loot || []), ...newLoot];
+      }
+    }
+  });
+  E.saveCharacters(chars);
+  E.resetState();
+  closeModal('deathModal');
+  closeModal('victoryModal');
+  closeModal('endRunModal');
+  gameState = E.getDefaultState();
+  showScreen('setupScreen');
+  updatePlayerSlots();
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function goToMap() { window.location.href = 'map.html'; }
+
+// ---- START ----
+setQty(1);
+init();
+</script>
+</body>
+</html>
 
