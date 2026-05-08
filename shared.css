@@ -1,23 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {
-  --parchment: #f4e4c1;
-  --parchment-dark: #e8d5a3;
-  --parchment-shadow: #c9a96e;
+  --parchment: #f8f0dc;
+  --parchment-dark: #edd9ac;
+  --parchment-shadow: #d4b47a;
   --ink: #2a1a0e;
   --ink-light: #4a2f1a;
   --blood: #8b1a1a;
-  --blood-bright: #c0392b;
-  --gold: #c9a227;
-  --gold-bright: #f1c40f;
-  --stone: #5a5a6e;
+  --blood-bright: #e04030;
+  --gold: #d4a832;
+  --gold-bright: #f5c518;
+  --stone: #6a6a7e;
   --stone-dark: #2c2c3e;
-  --stone-light: #8a8a9e;
+  --stone-light: #b0b0c4;
   --torch: #ff6b1a;
   --torch-glow: rgba(255, 107, 26, 0.3);
   --shadow: rgba(0,0,0,0.7);
   --emerald: #1a6b3a;
-  --emerald-bright: #27ae60;
+  --emerald-bright: #2ecc71;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -30,6 +30,7 @@ body {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
   color: var(--parchment);
   font-family: 'Crimson Text', serif;
+  font-size: 17px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -63,7 +64,7 @@ nav .nav-brand {
 }
 
 nav a {
-  color: var(--parchment);
+  color: #d8d0e8;
   text-decoration: none;
   font-family: 'Cinzel', serif;
   font-size: 0.8rem;
@@ -88,12 +89,12 @@ footer {
   text-align: center;
   font-family: 'Crimson Text', serif;
   font-size: 0.95rem;
-  color: var(--stone-light);
+  color: #b0b0c4;
   margin-top: auto;
 }
 
 footer .copyright {
-  color: var(--stone-light);
+  color: #b0b0c4;
   text-decoration: none;
   cursor: default;
   transition: color 0.3s;
@@ -162,8 +163,8 @@ footer .copyright:hover { color: var(--gold); }
 /* INPUTS */
 input, select, textarea {
   background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(201,162,39,0.3);
-  color: var(--parchment);
+  border: 1px solid rgba(212,168,50,0.35);
+  color: #f8f0dc;
   font-family: 'Crimson Text', serif;
   font-size: 1rem;
   padding: 0.5rem 0.75rem;
@@ -175,12 +176,12 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   border-color: var(--gold);
 }
-select option { background: #1a1520; }
+select option { background: #1a1520; color: #f8f0dc; }
 label {
   font-family: 'Cinzel', serif;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
-  color: var(--stone-light);
+  color: #b0b0c4;
   text-transform: uppercase;
   display: block;
   margin-bottom: 0.3rem;
@@ -210,7 +211,7 @@ label {
   color: var(--gold);
   margin-bottom: 1rem;
 }
-.modal-box p { font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6; }
+.modal-box p { font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6; color: #f0e8d0; }
 
 /* DICE */
 .dice-display {
