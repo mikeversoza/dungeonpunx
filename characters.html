@@ -7,92 +7,43 @@
 <link rel="stylesheet" href="shared.css">
 <style>
 .chars-container { padding: 1.5rem; flex: 1; }
-.chars-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+.chars-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
 .chars-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold); }
 .chars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-
-.char-card {
-  background: linear-gradient(135deg, rgba(20,16,28,0.97), rgba(14,10,20,0.99));
-  border: 1px solid rgba(201,162,39,0.3);
-  padding: 1.2rem;
-  position: relative;
-  transition: border-color 0.2s;
-  cursor: pointer;
-}
-.char-card:hover { border-color: var(--gold); }
-.char-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem; }
+.char-card { background: linear-gradient(135deg,rgba(20,16,28,.97),rgba(14,10,20,.99)); border: 1px solid rgba(201,162,39,.3); padding: 1.2rem; position: relative; transition: border-color .2s; }
+.char-card:hover { border-color: rgba(201,162,39,.6); }
+.char-card.locked-card { border-color: rgba(100,90,130,.4); }
+.char-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: .75rem; }
 .char-name { font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gold); }
-.char-meta { font-size: 0.82rem; color: var(--stone-light); margin-top: 0.1rem; }
-.char-actions { display: flex; gap: 0.3rem; }
-
-.stat-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.4rem; margin: 0.75rem 0; }
-.stat-box {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(201,162,39,0.2);
-  text-align: center;
-  padding: 0.4rem 0.2rem;
-}
-.stat-abbr { font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--stone-light); letter-spacing: 0.05em; }
+.char-meta { font-size: .82rem; color: var(--stone-light); margin-top: .1rem; }
+.char-actions { display: flex; gap: .3rem; flex-wrap: wrap; justify-content: flex-end; }
+.stat-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: .4rem; margin: .75rem 0; }
+.stat-box { background: rgba(0,0,0,.3); border: 1px solid rgba(201,162,39,.2); text-align: center; padding: .4rem .2rem; }
+.stat-abbr { font-family: 'Cinzel', serif; font-size: .6rem; color: var(--stone-light); letter-spacing: .05em; }
 .stat-score { font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--parchment); }
-.stat-mod { font-size: 0.7rem; color: var(--gold); }
-
-.char-vitals { display: flex; gap: 0.75rem; font-size: 0.82rem; margin-bottom: 0.5rem; }
+.stat-mod { font-size: .7rem; color: var(--gold); }
+.char-vitals { display: flex; gap: .75rem; font-size: .82rem; margin-bottom: .5rem; flex-wrap: wrap; }
 .vital { text-align: center; }
-.vital-label { font-family: 'Cinzel', serif; font-size: 0.6rem; color: var(--stone-light); letter-spacing: 0.08em; }
+.vital-label { font-family: 'Cinzel', serif; font-size: .6rem; color: var(--stone-light); letter-spacing: .08em; }
 .vital-val { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--parchment); }
-
-.skills-section { font-size: 0.78rem; color: var(--stone-light); margin-top: 0.5rem; }
-.skill-prof { color: var(--gold); }
-
-.loot-chip {
-  display: inline-block;
-  background: rgba(201,162,39,0.1);
-  border: 1px solid rgba(201,162,39,0.3);
-  color: var(--gold);
-  font-size: 0.72rem;
-  padding: 0.15rem 0.5rem;
-  margin: 0.15rem;
-  border-radius: 2px;
-}
-
-/* Sheet editor modal */
-.sheet-modal {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.9);
-  z-index: 200;
-  display: flex; align-items: flex-start; justify-content: center;
-  overflow-y: auto;
-  padding: 2rem 1rem;
-}
-.sheet-box {
-  background: linear-gradient(135deg, #1e1828, #14101c);
-  border: 2px solid var(--gold);
-  padding: 2rem;
-  width: 100%;
-  max-width: 750px;
-  box-shadow: 0 0 60px rgba(201,162,39,0.2);
-}
+.loot-chip { display: inline-block; background: rgba(201,162,39,.1); border: 1px solid rgba(201,162,39,.3); color: var(--gold); font-size: .72rem; padding: .15rem .5rem; margin: .15rem; border-radius: 2px; }
+.xp-bar-bg { height: 8px; background: rgba(0,0,0,.4); border: 1px solid rgba(201,162,39,.2); margin: 4px 0; }
+.xp-bar-fill { height: 100%; background: linear-gradient(90deg,#7b68ee,#9b88ff); transition: width .5s; }
+.sheet-modal { position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 200; display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 2rem 1rem; }
+.sheet-box { background: linear-gradient(135deg,#1e1828,#14101c); border: 2px solid var(--gold); padding: 2rem; width: 100%; max-width: 750px; box-shadow: 0 0 60px rgba(201,162,39,.2); }
 .sheet-box h2 { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--gold); margin-bottom: 1.5rem; text-align: center; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
-.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
-.form-group { margin-bottom: 0.75rem; }
-
-.ability-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: 1rem; }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; margin-bottom: 1rem; }
+.form-group { margin-bottom: .75rem; }
+.ability-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: .5rem; margin-bottom: 1rem; }
 .ability-input-box { text-align: center; }
-.ability-input-box label { font-size: 0.65rem; }
-.ability-input-box input { text-align: center; font-size: 1.1rem; padding: 0.4rem 0.3rem; }
-
-.skills-checkboxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; font-size: 0.8rem; }
-.skill-check { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+.ability-input-box label { font-size: .65rem; }
+.ability-input-box input { text-align: center; font-size: 1.1rem; padding: .4rem .3rem; }
+.skills-checkboxes { display: grid; grid-template-columns: repeat(3,1fr); gap: .25rem; font-size: .8rem; }
+.skill-check { display: flex; align-items: center; gap: .4rem; cursor: pointer; }
 .skill-check input[type=checkbox] { width: auto; accent-color: var(--gold); }
-
-.xp-bar-bg {
-  height: 8px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(201,162,39,0.2);
-  margin: 4px 0;
-}
-.xp-bar-fill { height: 100%; background: linear-gradient(90deg, #7b68ee, #9b88ff); transition: width 0.5s; }
+.pin-badge { display: inline-block; font-size: .65rem; padding: .15rem .5rem; border: 1px solid rgba(100,90,140,.5); color: rgba(180,170,220,.7); margin-left: .4rem; font-family: 'Cinzel', serif; letter-spacing: .08em; }
+.edition-tag { display: inline-block; font-family: 'Cinzel', serif; font-size: .6rem; letter-spacing: .1em; padding: .15rem .5rem; border: 1px solid var(--stone-light); color: var(--stone-light); text-transform: uppercase; margin-left: .4rem; }
 </style>
 </head>
 <body>
@@ -101,8 +52,6 @@
   <a href="index.html">Adventure</a>
   <a href="characters.html" class="active">Characters</a>
   <a href="map.html">Map</a>
-  <a href="rooms.html">Room Editor</a>
-  <a href="monsters.html">Monsters</a>
   <a href="import.html">Import Module</a>
 </nav>
 
@@ -110,45 +59,58 @@
   <div class="chars-header">
     <div>
       <h1>Character Sheets</h1>
-      <div style="color:var(--stone-light);font-style:italic;font-size:0.9rem">Manage your party's heroes</div>
+      <div id="editionBadge" style="color:var(--stone-light);font-style:italic;font-size:.9rem">Loading...</div>
     </div>
-    <button class="btn btn-success" onclick="openNewChar()">+ New Character</button>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn-success" onclick="openNewChar()">+ New Character</button>
+    </div>
   </div>
+  <div id="loadingMsg" style="text-align:center;padding:3rem;color:var(--stone-light);font-style:italic">Loading characters from the ether...</div>
+  <div id="charGrid" class="chars-grid" style="display:none"></div>
+</div>
 
-  <div id="charGrid" class="chars-grid">
-    <div style="color:var(--stone-light);font-style:italic;grid-column:1/-1;text-align:center;padding:3rem">
-      No characters yet. Create your first hero!
+<!-- PIN UNLOCK MODAL -->
+<div id="pinModal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="max-width:360px">
+    <div style="font-size:2rem;margin-bottom:.75rem">🔒</div>
+    <h2 style="font-size:1.3rem">Character Locked</h2>
+    <p style="font-size:.9rem;margin-bottom:1rem"><span id="pinCharName" style="color:var(--gold)"></span> is PIN protected.</p>
+    <input type="password" id="pinInput" placeholder="Enter PIN..." style="text-align:center;font-size:1.3rem;letter-spacing:.2em;margin-bottom:1rem" maxlength="8" onkeydown="if(event.key==='Enter')checkPin()">
+    <div id="pinError" style="color:var(--blood-bright);font-size:.85rem;margin-bottom:.75rem;min-height:1.2rem"></div>
+    <div style="display:flex;gap:.75rem;justify-content:center">
+      <button class="btn btn-success" onclick="checkPin()">Unlock</button>
+      <button class="btn" onclick="document.getElementById('pinModal').style.display='none'">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- Sheet Editor -->
+<!-- SHEET EDITOR MODAL -->
 <div id="sheetModal" class="sheet-modal" style="display:none">
   <div class="sheet-box fade-in">
     <h2 id="sheetModalTitle">New Character</h2>
 
-    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.5rem">IDENTITY</div>
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.5rem">IDENTITY</div>
     <div class="form-grid">
       <div class="form-group"><label>Character Name</label><input type="text" id="f_name" placeholder="Enter name..."></div>
       <div class="form-group"><label>Player Name</label><input type="text" id="f_player" placeholder="Player name..."></div>
       <div class="form-group"><label>Race</label><select id="f_race"></select></div>
-      <div class="form-group"><label>Class</label><select id="f_class"></select></div>
+      <div class="form-group"><label>Class</label><select id="f_class" onchange="calcDerived()"></select></div>
       <div class="form-group"><label>Alignment</label><select id="f_alignment"></select></div>
       <div class="form-group"><label>Background</label><input type="text" id="f_background" placeholder="e.g. Soldier, Sage..."></div>
     </div>
 
-    <div class="form-grid-3" style="margin-bottom:1rem">
+    <div class="form-grid-3">
       <div class="form-group"><label>Level (1–20)</label><input type="number" id="f_level" min="1" max="20" value="1" oninput="calcDerived()"></div>
       <div class="form-group"><label>Experience Points</label><input type="number" id="f_xp" min="0" value="0"></div>
       <div class="form-group"><label>Proficiency Bonus</label><input type="text" id="f_prof" readonly placeholder="+2"></div>
     </div>
 
     <hr class="divider">
-    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">ABILITY SCORES</div>
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.75rem">ABILITY SCORES</div>
     <div class="ability-grid" id="abilityGrid"></div>
 
     <hr class="divider">
-    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">COMBAT</div>
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.75rem">COMBAT</div>
     <div class="form-grid-3">
       <div class="form-group"><label>Max HP</label><input type="number" id="f_maxHP" min="1" value="10"></div>
       <div class="form-group"><label>Current HP</label><input type="number" id="f_currentHP" min="0" value="10"></div>
@@ -156,24 +118,35 @@
       <div class="form-group"><label>Armor Class</label><input type="number" id="f_ac" min="1" value="10"></div>
       <div class="form-group"><label>Speed (ft)</label><input type="number" id="f_speed" min="0" value="30"></div>
       <div class="form-group"><label>Initiative</label><input type="number" id="f_initiative" value="0"></div>
-      <div class="form-group" style="display:flex;align-items:center;gap:0.75rem;padding-top:1.2rem">
+      <div class="form-group" style="display:flex;align-items:center;gap:.75rem;padding-top:1.2rem;grid-column:span 2">
         <input type="checkbox" id="f_inspiration" style="width:auto;accent-color:var(--gold-bright);width:18px;height:18px">
-        <label for="f_inspiration" style="display:inline;font-size:0.82rem;color:var(--parchment);text-transform:none;letter-spacing:0;cursor:pointer">✦ Has Inspiration Token</label>
+        <label for="f_inspiration" style="display:inline;font-size:.82rem;color:var(--parchment);text-transform:none;letter-spacing:0;cursor:pointer">✦ Has Inspiration Token</label>
       </div>
     </div>
 
     <hr class="divider">
-    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">SAVING THROWS (check proficiencies)</div>
-    <div class="skills-checkboxes" id="savingThrowChecks" style="grid-template-columns:repeat(3,1fr);margin-bottom:1rem"></div>
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.75rem">SAVING THROWS</div>
+    <div id="savingThrowChecks" class="skills-checkboxes" style="grid-template-columns:repeat(3,1fr);margin-bottom:1rem"></div>
 
     <hr class="divider">
-    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">SKILL PROFICIENCIES</div>
-    <div class="skills-checkboxes" id="skillChecks"></div>
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.75rem">SKILL PROFICIENCIES</div>
+    <div id="skillChecks" class="skills-checkboxes"></div>
 
     <hr class="divider">
-    <div style="font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.75rem">INVENTORY & NOTES</div>
-    <div class="form-group"><label>Inventory (one item per line)</label><textarea id="f_inventory" rows="4" placeholder="Longsword&#10;Chain mail&#10;Explorer's pack..."></textarea></div>
-    <div class="form-group"><label>Backstory & Notes</label><textarea id="f_notes" rows="3" placeholder="Write your character's history..."></textarea></div>
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.75rem">SECURITY & NOTES</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Character PIN (optional, 4-8 digits)</label>
+        <input type="password" id="f_pin" placeholder="Leave blank for no lock..." maxlength="8">
+        <div style="font-size:.72rem;color:var(--stone-light);margin-top:.2rem">Set a PIN to prevent others from editing this character.</div>
+      </div>
+      <div class="form-group">
+        <label>Confirm PIN</label>
+        <input type="password" id="f_pinConfirm" placeholder="Repeat PIN..." maxlength="8">
+      </div>
+    </div>
+    <div class="form-group"><label>Inventory (one item per line)</label><textarea id="f_inventory" rows="3" placeholder="Longsword&#10;Chain mail&#10;Explorer's pack..."></textarea></div>
+    <div class="form-group"><label>Notes & Backstory</label><textarea id="f_notes" rows="3" placeholder="Character history, traits..."></textarea></div>
 
     <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem">
       <button class="btn btn-success" onclick="saveChar()">Save Character</button>
@@ -183,348 +156,339 @@
 </div>
 
 <!-- INSPIRATION MODAL -->
-<div id="inspirationModal" class="modal-overlay" style="display:none" data-char-id="">
+<div id="inspirationModal" class="modal-overlay" style="display:none" data-char-key="">
   <div class="modal-box" style="max-width:400px">
-    <div style="font-size:2.5rem;margin-bottom:0.75rem;animation:torchFlicker 2s infinite">✦</div>
+    <div style="font-size:2.5rem;margin-bottom:.75rem;animation:torchFlicker 2s infinite">✦</div>
     <h2>Inspiration</h2>
-    <p style="font-size:0.95rem;margin-bottom:0.5rem"><span id="inspModalName" style="color:var(--gold)"></span> has an Inspiration token!</p>
-    <p style="font-size:0.85rem;color:var(--stone-light);margin-bottom:1.25rem">Spend it to roll a d20 with advantage — take the higher of two rolls.</p>
+    <p style="font-size:.95rem;margin-bottom:.5rem"><span id="inspModalName" style="color:var(--gold)"></span> has an Inspiration token!</p>
+    <p style="font-size:.85rem;color:var(--stone-light);margin-bottom:1.25rem">Spend it to roll a d20 with advantage — take the higher of two rolls.</p>
     <div id="inspModalResult"></div>
-    <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
+    <div style="display:flex;gap:.75rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
       <button id="useInspirationBtn" class="btn btn-success" onclick="rollWithAdvantage()">🎲 Roll with Advantage</button>
-      <button id="closeInspirationBtn" class="btn" onclick="closeInspirationModal()">Cancel</button>
+      <button class="btn" onclick="closeInspirationModal()">Cancel</button>
     </div>
   </div>
 </div>
 
 <footer>
-    <span><a href="thanks.html" class="copyright" title="">©</a>&nbsp; Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span></span>
+  <span><a href="thanks.html" class="copyright" title="">©</a>&nbsp; Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span></span>
 </footer>
 
 <script src="engine.js"></script>
 <script>
 const E = DungeonEngine;
-let editingId = null;
+let editingKey = null; // Firebase key
+let unlockedKeys = new Set(); // session-unlocked chars
+let currentEdition = '5e';
 
 document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
 
-function init() {
+async function init() {
   if (!E.AUTH.check()) { window.location.href = 'index.html'; return; }
-  buildFormSelects();
-  buildAbilityGrid();
-  buildSavingThrowChecks();
-  buildSkillChecks();
-  renderChars();
+  const settings = await E.getAdminSettings();
+  currentEdition = settings.edition || '5e';
+  const edData = currentEdition === '1e' ? E.D1E : E.D5E;
+  document.getElementById('editionBadge').textContent = currentEdition === '1e' ? 'AD&D 1st Edition Rules' : 'D&D 5th Edition Rules';
+  buildFormSelects(edData);
+  buildAbilityGrid(edData);
+  buildSavingThrowChecks(edData);
+  buildSkillChecks(edData);
+  await renderChars();
 }
 
-function buildFormSelects() {
-  const raceEl = document.getElementById('f_race');
-  raceEl.innerHTML = E.D5E.races.map(r => `<option>${r}</option>`).join('');
-  const classEl = document.getElementById('f_class');
-  classEl.innerHTML = E.D5E.classes.map(c => `<option>${c}</option>`).join('');
-  const alignEl = document.getElementById('f_alignment');
-  alignEl.innerHTML = E.D5E.alignments.map(a => `<option>${a}</option>`).join('');
+function buildFormSelects(ed) {
+  document.getElementById('f_race').innerHTML = ed.races.map(r=>`<option>${r}</option>`).join('');
+  document.getElementById('f_class').innerHTML = ed.classes.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('f_alignment').innerHTML = ed.alignments.map(a=>`<option>${a}</option>`).join('');
 }
 
-function buildAbilityGrid() {
-  const grid = document.getElementById('abilityGrid');
-  grid.innerHTML = E.D5E.abilityScores.map(ab => `
+function buildAbilityGrid(ed) {
+  document.getElementById('abilityGrid').innerHTML = ed.abilityScores.map(ab=>`
     <div class="ability-input-box">
-      <label>${E.D5E.abilityAbbr[ab]}</label>
-      <input type="number" id="ab_${ab}" min="1" max="30" value="10" oninput="calcDerived()" style="padding:0.3rem">
-      <div style="font-size:0.7rem;color:var(--gold);text-align:center;margin-top:2px" id="mod_${ab}">+0</div>
-    </div>
-  `).join('');
+      <label>${ed.abilityAbbr[ab]}</label>
+      <input type="number" id="ab_${ab}" min="1" max="30" value="10" oninput="calcDerived()" style="padding:.3rem">
+      <div style="font-size:.7rem;color:var(--gold);text-align:center;margin-top:2px" id="mod_${ab}">+0</div>
+    </div>`).join('');
 }
 
-function buildSavingThrowChecks() {
-  const c = document.getElementById('savingThrowChecks');
-  c.innerHTML = E.D5E.savingThrows.map(st => `
-    <label class="skill-check"><input type="checkbox" id="st_${st}"> ${E.D5E.abilityAbbr[st] || st}</label>
-  `).join('');
+function buildSavingThrowChecks(ed) {
+  document.getElementById('savingThrowChecks').innerHTML = ed.savingThrows.map(st=>`
+    <label class="skill-check"><input type="checkbox" id="st_${st.replace(/[^a-z]/gi,'_')}"> ${st}</label>`).join('');
 }
 
-function buildSkillChecks() {
-  const c = document.getElementById('skillChecks');
-  c.innerHTML = E.D5E.skills.map(sk => `
-    <label class="skill-check"><input type="checkbox" id="sk_${sk.replace(/\s/g,'_')}"> ${sk}</label>
-  `).join('');
+function buildSkillChecks(ed) {
+  document.getElementById('skillChecks').innerHTML = ed.skills.map(sk=>`
+    <label class="skill-check"><input type="checkbox" id="sk_${sk.replace(/\s/g,'_')}"> ${sk}</label>`).join('');
 }
 
 function calcDerived() {
-  const level = parseInt(document.getElementById('f_level').value) || 1;
-  document.getElementById('f_prof').value = '+' + E.D5E.proficiencyBonus(level);
-  E.D5E.abilityScores.forEach(ab => {
-    const score = parseInt(document.getElementById(`ab_${ab}`).value) || 10;
+  const level = parseInt(document.getElementById('f_level').value)||1;
+  const cls = document.getElementById('f_class').value;
+  if (currentEdition === '5e') {
+    document.getElementById('f_prof').value = '+' + E.D5E.proficiencyBonus(level);
+  } else {
+    document.getElementById('f_prof').value = 'THAC0 ' + E.D1E.thac0(level, cls);
+  }
+  const ed = currentEdition === '1e' ? E.D1E : E.D5E;
+  ed.abilityScores.forEach(ab => {
+    const score = parseInt(document.getElementById(`ab_${ab}`)?.value)||10;
     const mod = E.DICE.modifier(score);
-    document.getElementById(`mod_${ab}`).textContent = (mod >= 0 ? '+' : '') + mod;
+    const el = document.getElementById(`mod_${ab}`);
+    if (el) el.textContent = (mod>=0?'+':'')+mod;
   });
 }
 
-function renderChars() {
-  const chars = E.getCharacters();
+async function renderChars() {
+  document.getElementById('loadingMsg').style.display = 'block';
+  document.getElementById('charGrid').style.display = 'none';
+  const chars = await E.getCharacters();
   const grid = document.getElementById('charGrid');
+  document.getElementById('loadingMsg').style.display = 'none';
+  grid.style.display = 'grid';
+
   if (!chars.length) {
     grid.innerHTML = '<div style="color:var(--stone-light);font-style:italic;grid-column:1/-1;text-align:center;padding:3rem">No characters yet. Create your first hero!</div>';
     return;
   }
+
+  const ed = currentEdition === '1e' ? E.D1E : E.D5E;
   grid.innerHTML = chars.map(c => {
-    const xpCurrent = c.xp || 0;
-    const nextXP = E.D5E.xpByLevel[c.level] || 999999;
-    const prevXP = E.D5E.xpByLevel[c.level - 1] || 0;
-    const xpPct = Math.min(100, ((xpCurrent - prevXP) / (nextXP - prevXP)) * 100);
-    const hpPct = Math.max(0, (c.currentHP / c.maxHP) * 100);
-    const profSkills = (c.skills || []).slice(0, 4);
+    const isLocked = c.pinHash && !unlockedKeys.has(c._fbKey);
+    const xpCur = c.xp||0;
+    const nextXP = E.D5E.xpByLevel[c.level]||999999;
+    const prevXP = E.D5E.xpByLevel[(c.level||1)-1]||0;
+    const xpPct = Math.min(100, ((xpCur-prevXP)/(nextXP-prevXP))*100);
+    const hpPct = Math.max(0, (c.currentHP/c.maxHP)*100);
     return `
-    <div class="char-card" onclick="openEditChar('${c.id}')">
+    <div class="char-card ${isLocked?'locked-card':''}">
       <div class="char-card-header">
         <div>
-          <div class="char-name">${c.name}</div>
-          <div class="char-meta">${c.race} ${c.class} · Level ${c.level} · ${c.alignment || ''}</div>
+          <div class="char-name">${c.name}${c.pinHash?'<span class="pin-badge">🔒 PIN</span>':''}
+            <span class="edition-tag">${c.edition||'5e'}</span>
+          </div>
+          <div class="char-meta">${c.race} ${c.class} · Level ${c.level}${c.alignment?' · '+c.alignment:''}</div>
         </div>
-        <div class="char-actions" onclick="event.stopPropagation()">
-          <button class="btn btn-sm" onclick="toggleInspiration('${c.id}', event)" style="border-color:${c.inspiration?'var(--gold-bright)':'rgba(201,162,39,0.3)'};color:${c.inspiration?'var(--gold-bright)':'var(--stone-light)'};background:${c.inspiration?'rgba(241,196,15,0.15)':'transparent'}" title="${c.inspiration?'Has Inspiration — Click to use':'Grant Inspiration'}">✦ ${c.inspiration?'Inspired':'Inspire'}</button>
-          <button class="btn btn-sm" onclick="openEditChar('${c.id}')">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteChar('${c.id}')">✕</button>
+        <div class="char-actions">
+          ${c.inspiration?`<button class="btn btn-sm" onclick="showAdvantageModal('${c._fbKey}','${c.name}')" style="border-color:var(--gold-bright);color:var(--gold-bright);background:rgba(241,196,15,.15)">✦ Inspired</button>`:''}
+          <button class="btn btn-sm" onclick="tryEdit('${c._fbKey}')">Edit</button>
         </div>
       </div>
-
       <div class="char-vitals">
         <div class="vital"><div class="vital-label">HP</div><div class="vital-val">${c.currentHP}/${c.maxHP}</div></div>
         <div class="vital"><div class="vital-label">AC</div><div class="vital-val">${c.ac}</div></div>
         <div class="vital"><div class="vital-label">Speed</div><div class="vital-val">${c.speed}ft</div></div>
-        <div class="vital"><div class="vital-label">Prof</div><div class="vital-val">+${E.D5E.proficiencyBonus(c.level)}</div></div>
-        <div class="vital"><div class="vital-label">Init</div><div class="vital-val">${c.initiative >= 0 ? '+' : ''}${c.initiative}</div></div>
-        ${c.inspiration ? `<div class="vital"><div class="vital-label" style="color:var(--gold)">Inspo</div><div class="vital-val" style="color:var(--gold-bright);animation:torchFlicker 2s infinite">✦</div></div>` : ''}
+        ${currentEdition==='5e'?`<div class="vital"><div class="vital-label">Prof</div><div class="vital-val">+${E.D5E.proficiencyBonus(c.level)}</div></div>`:`<div class="vital"><div class="vital-label">THAC0</div><div class="vital-val">${E.D1E.thac0(c.level,c.class)}</div></div>`}
+        ${c.inspiration?`<div class="vital"><div class="vital-label" style="color:var(--gold)">Inspo</div><div class="vital-val" style="color:var(--gold-bright);animation:torchFlicker 2s infinite">✦</div></div>`:''}
       </div>
-
       <div class="hp-bar-bg"><div class="hp-bar-fill" style="width:${hpPct}%;background:${hpPct>50?'linear-gradient(90deg,#1a6b3a,#27ae60)':hpPct>25?'linear-gradient(90deg,#8b6914,#c9a227)':'linear-gradient(90deg,#5a0a0a,#c0392b)'}"></div></div>
-
       <div class="stat-grid">
-        ${E.D5E.abilityScores.map(ab => {
-          const score = c.abilities?.[ab] || 10;
-          const mod = E.DICE.modifier(score);
-          return `<div class="stat-box"><div class="stat-abbr">${E.D5E.abilityAbbr[ab]}</div><div class="stat-score">${score}</div><div class="stat-mod">${mod>=0?'+':''}${mod}</div></div>`;
-        }).join('')}
+        ${ed.abilityScores.map(ab=>{const s=c.abilities?.[ab]||10;const m=E.DICE.modifier(s);return`<div class="stat-box"><div class="stat-abbr">${ed.abilityAbbr[ab]}</div><div class="stat-score">${s}</div><div class="stat-mod">${m>=0?'+':''}${m}</div></div>`;}).join('')}
       </div>
-
-      <div style="margin-bottom:0.5rem">
-        <div style="font-size:0.72rem;color:var(--stone-light);margin-bottom:2px">XP: ${xpCurrent.toLocaleString()} / ${nextXP.toLocaleString()}</div>
+      <div style="margin-bottom:.5rem">
+        <div style="font-size:.72rem;color:var(--stone-light);margin-bottom:2px">XP: ${xpCur.toLocaleString()} / ${nextXP.toLocaleString()}</div>
         <div class="xp-bar-bg"><div class="xp-bar-fill" style="width:${xpPct}%"></div></div>
       </div>
-
-      ${profSkills.length ? `<div class="skills-section">Prof: ${profSkills.map(s=>`<span class="skill-prof">${s}</span>`).join(', ')}${c.skills.length > 4 ? ` +${c.skills.length - 4} more` : ''}</div>` : ''}
-
-      ${(c.loot && c.loot.length) ? `<div style="margin-top:0.5rem">${c.loot.slice(0,4).map(l=>`<span class="loot-chip">${l}</span>`).join('')}${c.loot.length>4?`<span class="loot-chip">+${c.loot.length-4}</span>`:''}</div>` : ''}
-
-      ${c.conditions && c.conditions.length ? `<div style="margin-top:0.4rem">${c.conditions.map(cond=>`<span class="tag tag-blood" style="font-size:0.6rem;margin-right:3px">${cond}</span>`).join('')}</div>` : ''}
-    </div>
-    `;
+      ${(c.loot&&c.loot.length)?`<div style="margin-top:.5rem">${c.loot.slice(0,4).map(l=>`<span class="loot-chip">${l}</span>`).join('')}${c.loot.length>4?`<span class="loot-chip">+${c.loot.length-4}</span>`:''}</div>`:''}
+    </div>`;
   }).join('');
 }
 
+// ---- PIN FLOW ----
+let pendingEditKey = null;
+function tryEdit(fbKey) {
+  const chars = []; // will be fetched async
+  (async () => {
+    const allChars = await E.getCharacters();
+    const char = allChars.find(c => c._fbKey === fbKey);
+    if (!char) return;
+    if (char.pinHash && !unlockedKeys.has(fbKey)) {
+      pendingEditKey = fbKey;
+      document.getElementById('pinCharName').textContent = char.name;
+      document.getElementById('pinInput').value = '';
+      document.getElementById('pinError').textContent = '';
+      document.getElementById('pinModal').style.display = 'flex';
+    } else {
+      openEditChar(fbKey);
+    }
+  })();
+}
+
+async function checkPin() {
+  const pin = document.getElementById('pinInput').value;
+  if (!pin) { document.getElementById('pinError').textContent = 'Please enter your PIN.'; return; }
+  const allChars = await E.getCharacters();
+  const char = allChars.find(c => c._fbKey === pendingEditKey);
+  if (!char) return;
+  if (E.hashPin(pin) === char.pinHash) {
+    unlockedKeys.add(pendingEditKey);
+    document.getElementById('pinModal').style.display = 'none';
+    openEditChar(pendingEditKey);
+  } else {
+    document.getElementById('pinError').textContent = 'Incorrect PIN. Try again.';
+    document.getElementById('pinInput').value = '';
+  }
+}
+
+// ---- EDITOR ----
 function openNewChar() {
-  editingId = null;
+  editingKey = null;
   document.getElementById('sheetModalTitle').textContent = 'New Character';
   clearForm();
   document.getElementById('sheetModal').style.display = 'flex';
 }
 
-function openEditChar(id) {
-  const chars = E.getCharacters();
-  const char = chars.find(c => c.id === id);
+async function openEditChar(fbKey) {
+  const allChars = await E.getCharacters();
+  const char = allChars.find(c => c._fbKey === fbKey);
   if (!char) return;
-  editingId = id;
+  editingKey = fbKey;
   document.getElementById('sheetModalTitle').textContent = `Edit: ${char.name}`;
   populateForm(char);
   document.getElementById('sheetModal').style.display = 'flex';
-  document.querySelector('.sheet-box').scrollTop = 0;
 }
 
 function clearForm() {
-  document.getElementById('f_name').value = '';
-  document.getElementById('f_player').value = '';
-  document.getElementById('f_background').value = '';
-  document.getElementById('f_level').value = 1;
-  document.getElementById('f_xp').value = 0;
-  document.getElementById('f_maxHP').value = 10;
-  document.getElementById('f_currentHP').value = 10;
-  document.getElementById('f_tempHP').value = 0;
-  document.getElementById('f_ac').value = 10;
-  document.getElementById('f_speed').value = 30;
-  document.getElementById('f_initiative').value = 0;
+  ['f_name','f_player','f_background','f_pin','f_pinConfirm','f_notes','f_inventory'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['f_level','f_xp'].forEach(id => { const el=document.getElementById(id); if(el) el.value=id==='f_level'?1:0; });
+  ['f_maxHP','f_currentHP'].forEach(id => { const el=document.getElementById(id); if(el) el.value=10; });
+  ['f_tempHP'].forEach(id => { const el=document.getElementById(id); if(el) el.value=0; });
+  ['f_ac'].forEach(id => { const el=document.getElementById(id); if(el) el.value=10; });
+  ['f_speed'].forEach(id => { const el=document.getElementById(id); if(el) el.value=30; });
+  ['f_initiative'].forEach(id => { const el=document.getElementById(id); if(el) el.value=0; });
   document.getElementById('f_inspiration').checked = false;
-  document.getElementById('f_inventory').value = '';
-  document.getElementById('f_notes').value = '';
-  E.D5E.abilityScores.forEach(ab => { document.getElementById(`ab_${ab}`).value = 10; });
-  E.D5E.savingThrows.forEach(st => { document.getElementById(`st_${st}`).checked = false; });
-  E.D5E.skills.forEach(sk => { document.getElementById(`sk_${sk.replace(/\s/g,'_')}`).checked = false; });
+  const ed = currentEdition === '1e' ? E.D1E : E.D5E;
+  ed.abilityScores.forEach(ab => { const el=document.getElementById(`ab_${ab}`); if(el) el.value=10; });
   calcDerived();
 }
 
-function populateForm(char) {
-  document.getElementById('f_name').value = char.name || '';
-  document.getElementById('f_player').value = char.playerName || '';
-  document.getElementById('f_race').value = char.race || 'Human';
-  document.getElementById('f_class').value = char.class || 'Fighter';
-  document.getElementById('f_alignment').value = char.alignment || 'True Neutral';
-  document.getElementById('f_background').value = char.background || '';
-  document.getElementById('f_level').value = char.level || 1;
-  document.getElementById('f_xp').value = char.xp || 0;
-  document.getElementById('f_maxHP').value = char.maxHP || 10;
-  document.getElementById('f_currentHP').value = char.currentHP || char.maxHP || 10;
-  document.getElementById('f_tempHP').value = char.tempHP || 0;
-  document.getElementById('f_ac').value = char.ac || 10;
-  document.getElementById('f_speed').value = char.speed || 30;
-  document.getElementById('f_initiative').value = char.initiative || 0;
-  document.getElementById('f_inspiration').checked = char.inspiration || false;
-  document.getElementById('f_inventory').value = (char.inventory || []).join('\n');
-  document.getElementById('f_notes').value = char.notes || '';
-  E.D5E.abilityScores.forEach(ab => {
-    document.getElementById(`ab_${ab}`).value = char.abilities?.[ab] || 10;
-  });
-  E.D5E.savingThrows.forEach(st => {
-    document.getElementById(`st_${st}`).checked = (char.savingThrows || []).includes(st);
-  });
-  E.D5E.skills.forEach(sk => {
-    document.getElementById(`sk_${sk.replace(/\s/g,'_')}`).checked = (char.skills || []).includes(sk);
-  });
+function populateForm(c) {
+  document.getElementById('f_name').value = c.name||'';
+  document.getElementById('f_player').value = c.playerName||'';
+  const raceEl = document.getElementById('f_race'); if(raceEl) raceEl.value = c.race||'Human';
+  const clsEl = document.getElementById('f_class'); if(clsEl) clsEl.value = c.class||'Fighter';
+  const almEl = document.getElementById('f_alignment'); if(almEl) almEl.value = c.alignment||'True Neutral';
+  document.getElementById('f_background').value = c.background||'';
+  document.getElementById('f_level').value = c.level||1;
+  document.getElementById('f_xp').value = c.xp||0;
+  document.getElementById('f_maxHP').value = c.maxHP||10;
+  document.getElementById('f_currentHP').value = c.currentHP||c.maxHP||10;
+  document.getElementById('f_tempHP').value = c.tempHP||0;
+  document.getElementById('f_ac').value = c.ac||10;
+  document.getElementById('f_speed').value = c.speed||30;
+  document.getElementById('f_initiative').value = c.initiative||0;
+  document.getElementById('f_inspiration').checked = c.inspiration||false;
+  document.getElementById('f_pin').value = '';
+  document.getElementById('f_pinConfirm').value = '';
+  document.getElementById('f_inventory').value = (c.inventory||[]).join('\n');
+  document.getElementById('f_notes').value = c.notes||'';
+  const ed = currentEdition === '1e' ? E.D1E : E.D5E;
+  ed.abilityScores.forEach(ab => { const el=document.getElementById(`ab_${ab}`); if(el) el.value=c.abilities?.[ab]||10; });
+  ed.savingThrows.forEach(st => { const el=document.getElementById(`st_${st.replace(/[^a-z]/gi,'_')}`); if(el) el.checked=(c.savingThrows||[]).includes(st); });
+  ed.skills.forEach(sk => { const el=document.getElementById(`sk_${sk.replace(/\s/g,'_')}`); if(el) el.checked=(c.skills||[]).includes(sk); });
   calcDerived();
 }
 
-function saveChar() {
+async function saveChar() {
   const name = document.getElementById('f_name').value.trim();
-  if (!name) { alert('Please enter a character name.'); return; }
+  if (!name) { alert('Character name required.'); return; }
+  const pin = document.getElementById('f_pin').value;
+  const pinConfirm = document.getElementById('f_pinConfirm').value;
+  if (pin && pin !== pinConfirm) { alert('PINs do not match.'); return; }
+  if (pin && (pin.length < 4 || !/^\d+$/.test(pin))) { alert('PIN must be 4-8 digits.'); return; }
 
+  const ed = currentEdition === '1e' ? E.D1E : E.D5E;
+  const level = parseInt(document.getElementById('f_level').value)||1;
+  const maxHP = parseInt(document.getElementById('f_maxHP').value)||10;
   const abilities = {};
-  E.D5E.abilityScores.forEach(ab => { abilities[ab] = parseInt(document.getElementById(`ab_${ab}`).value) || 10; });
-  const savingThrows = E.D5E.savingThrows.filter(st => document.getElementById(`st_${st}`).checked);
-  const skills = E.D5E.skills.filter(sk => document.getElementById(`sk_${sk.replace(/\s/g,'_')}`).checked);
-  const level = parseInt(document.getElementById('f_level').value) || 1;
-  const maxHP = parseInt(document.getElementById('f_maxHP').value) || 10;
+  ed.abilityScores.forEach(ab => { abilities[ab] = parseInt(document.getElementById(`ab_${ab}`)?.value)||10; });
+  const savingThrows = ed.savingThrows.filter(st => document.getElementById(`st_${st.replace(/[^a-z]/gi,'_')}`)?.checked);
+  const skills = ed.skills.filter(sk => document.getElementById(`sk_${sk.replace(/\s/g,'_')}`)?.checked);
+
+  // Get existing char data (to preserve loot/conditions etc)
+  let existingChar = {};
+  if (editingKey) {
+    const allChars = await E.getCharacters();
+    existingChar = allChars.find(c => c._fbKey === editingKey) || {};
+  }
 
   const charData = {
-    name,
+    ...existingChar,
+    name, edition: currentEdition,
     playerName: document.getElementById('f_player').value,
     race: document.getElementById('f_race').value,
     class: document.getElementById('f_class').value,
     alignment: document.getElementById('f_alignment').value,
     background: document.getElementById('f_background').value,
-    level,
-    xp: parseInt(document.getElementById('f_xp').value) || 0,
-    maxHP,
-    currentHP: parseInt(document.getElementById('f_currentHP').value) || maxHP,
-    tempHP: parseInt(document.getElementById('f_tempHP').value) || 0,
-    ac: parseInt(document.getElementById('f_ac').value) || 10,
-    speed: parseInt(document.getElementById('f_speed').value) || 30,
-    initiative: parseInt(document.getElementById('f_initiative').value) || 0,
+    level, xp: parseInt(document.getElementById('f_xp').value)||0,
+    maxHP, currentHP: parseInt(document.getElementById('f_currentHP').value)||maxHP,
+    tempHP: parseInt(document.getElementById('f_tempHP').value)||0,
+    ac: parseInt(document.getElementById('f_ac').value)||10,
+    speed: parseInt(document.getElementById('f_speed').value)||30,
+    initiative: parseInt(document.getElementById('f_initiative').value)||0,
     inspiration: document.getElementById('f_inspiration').checked,
-    proficiencyBonus: E.D5E.proficiencyBonus(level),
-    abilities,
-    savingThrows,
-    skills,
+    abilities, savingThrows, skills,
     inventory: document.getElementById('f_inventory').value.split('\n').map(s=>s.trim()).filter(Boolean),
     notes: document.getElementById('f_notes').value,
   };
 
-  const chars = E.getCharacters();
-  if (editingId) {
-    const idx = chars.findIndex(c => c.id === editingId);
-    if (idx >= 0) {
-      chars[idx] = { ...chars[idx], ...charData };
+  // Handle PIN
+  if (pin) {
+    charData.pinHash = E.hashPin(pin);
+    if (editingKey) unlockedKeys.add(editingKey); // keep unlocked after save
+  } else if (!pin && editingKey) {
+    // Clearing PIN: keep existing if field left blank and char had one
+    if (existingChar.pinHash && !document.getElementById('f_pin').value) {
+      charData.pinHash = existingChar.pinHash;
     }
-  } else {
-    chars.push(E.createCharacter(charData));
   }
-  E.saveCharacters(chars);
+
+  const saved = await E.saveCharacter(charData);
   closeSheetModal();
-  renderChars();
+  await renderChars();
 }
 
-function toggleInspiration(id, event) {
-  event.stopPropagation();
-  const chars = E.getCharacters();
-  const char = chars.find(c => c.id === id);
-  if (!char) return;
-
-  if (char.inspiration) {
-    // Has inspiration — offer to use it for advantage roll
-    showAdvantageModal(id);
-  } else {
-    // Grant inspiration
-    char.inspiration = true;
-    E.saveCharacters(chars);
-    renderChars();
-  }
+function closeSheetModal() {
+  document.getElementById('sheetModal').style.display = 'none';
+  editingKey = null;
 }
 
-function showAdvantageModal(charId) {
-  const chars = E.getCharacters();
-  const char = chars.find(c => c.id === charId);
-  if (!char) return;
-
-  const modal = document.getElementById('inspirationModal');
-  document.getElementById('inspModalName').textContent = char.name;
+// ---- INSPIRATION ----
+function showAdvantageModal(fbKey, name) {
+  document.getElementById('inspirationModal').dataset.charKey = fbKey;
+  document.getElementById('inspModalName').textContent = name;
   document.getElementById('inspModalResult').innerHTML = '';
-  modal.style.display = 'flex';
-  modal.dataset.charId = charId;
+  document.getElementById('useInspirationBtn').textContent = '🎲 Roll with Advantage';
+  document.getElementById('inspirationModal').style.display = 'flex';
 }
 
-function rollWithAdvantage() {
-  const roll1 = Math.floor(Math.random() * 20) + 1;
-  const roll2 = Math.floor(Math.random() * 20) + 1;
-  const best = Math.max(roll1, roll2);
-  const result = document.getElementById('inspModalResult');
-  result.innerHTML = `
+async function rollWithAdvantage() {
+  const r1 = E.DICE.roll(20), r2 = E.DICE.roll(20);
+  const best = Math.max(r1, r2);
+  document.getElementById('inspModalResult').innerHTML = `
     <div style="font-family:'Cinzel',serif;margin:1rem 0">
-      <div style="display:flex;gap:1.5rem;justify-content:center;align-items:center;margin-bottom:0.75rem">
-        <div style="text-align:center">
-          <div style="font-size:0.7rem;color:var(--stone-light);letter-spacing:0.1em;margin-bottom:0.3rem">ROLL 1</div>
-          <div style="font-size:2.2rem;color:${roll1===best?'var(--gold-bright)':'var(--stone-light)'};">${roll1}</div>
-        </div>
+      <div style="display:flex;gap:1.5rem;justify-content:center;align-items:center;margin-bottom:.75rem">
+        <div style="text-align:center"><div style="font-size:.7rem;color:var(--stone-light);letter-spacing:.1em;margin-bottom:.3rem">ROLL 1</div>
+          <div style="font-size:2.2rem;color:${r1===best?'var(--gold-bright)':'var(--stone-light)'}">${r1}</div></div>
         <div style="color:var(--stone-light);font-size:1.2rem">vs</div>
-        <div style="text-align:center">
-          <div style="font-size:0.7rem;color:var(--stone-light);letter-spacing:0.1em;margin-bottom:0.3rem">ROLL 2</div>
-          <div style="font-size:2.2rem;color:${roll2===best?'var(--gold-bright)':'var(--stone-light)'};">${roll2}</div>
-        </div>
+        <div style="text-align:center"><div style="font-size:.7rem;color:var(--stone-light);letter-spacing:.1em;margin-bottom:.3rem">ROLL 2</div>
+          <div style="font-size:2.2rem;color:${r2===best?'var(--gold-bright)':'var(--stone-light)'}">${r2}</div></div>
       </div>
-      <div style="font-size:0.75rem;color:var(--stone-light);margin-bottom:0.5rem">RESULT</div>
-      <div style="font-size:3rem;color:var(--gold);text-shadow:0 0 20px rgba(201,162,39,0.6)">${best}</div>
-      ${best === 20 ? '<div style="color:var(--gold-bright);font-size:0.9rem;margin-top:0.5rem;animation:torchFlicker 1s infinite">⚡ NATURAL 20!</div>' : ''}
-    </div>
-  `;
-  // Spend the inspiration
-  const chars = E.getCharacters();
-  const char = chars.find(c => c.id === document.getElementById('inspirationModal').dataset.charId);
-  if (char) { char.inspiration = false; E.saveCharacters(chars); }
-  document.getElementById('useInspirationBtn').textContent = 'Roll Again';
-  document.getElementById('closeInspirationBtn').textContent = 'Done';
-  renderChars();
-}
-
-function grantInspiration(charId) {
-  const chars = E.getCharacters();
-  const char = chars.find(c => c.id === charId);
-  if (char) { char.inspiration = true; E.saveCharacters(chars); }
-  closeInspirationModal();
+      <div style="font-size:.75rem;color:var(--stone-light);margin-bottom:.5rem">RESULT</div>
+      <div style="font-size:3rem;color:var(--gold);text-shadow:0 0 20px rgba(201,162,39,.6)">${best}</div>
+      ${best===20?'<div style="color:var(--gold-bright);font-size:.9rem;margin-top:.5rem;animation:torchFlicker 1s infinite">⚡ NATURAL 20!</div>':''}
+    </div>`;
+  // Spend inspiration
+  const fbKey = document.getElementById('inspirationModal').dataset.charKey;
+  const allChars = await E.getCharacters();
+  const char = allChars.find(c => c._fbKey === fbKey);
+  if (char) { char.inspiration = false; await E.saveCharacter(char); }
+  document.getElementById('useInspirationBtn').textContent = '🎲 Roll Again';
   renderChars();
 }
 
 function closeInspirationModal() {
   document.getElementById('inspirationModal').style.display = 'none';
   renderChars();
-}
-
-function deleteChar(id) {
-  if (!confirm('Delete this character permanently?')) return;
-  const chars = E.getCharacters().filter(c => c.id !== id);
-  E.saveCharacters(chars);
-  renderChars();
-}
-
-function closeSheetModal() {
-  document.getElementById('sheetModal').style.display = 'none';
-  editingId = null;
 }
 
 init();
