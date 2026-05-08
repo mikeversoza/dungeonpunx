@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DM Screen — DUNGEONPUNX</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Admin-specific overrides — blood-red accent */
+:root { --admin-accent: #c0392b; --admin-glow: rgba(192,57,43,0.3); }
+
+.admin-container { padding: 1.5rem; flex: 1; }
+.admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.admin-header h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--blood-bright); text-shadow: 0 0 20px var(--admin-glow); }
+
+.admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+.admin-section { background: linear-gradient(135deg,rgba(20,16,28,.97),rgba(14,10,20,.99)); border: 1px solid rgba(192,57,43,.3); padding: 1.5rem; }
+.admin-section-title { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--blood-bright); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 1px solid rgba(192,57,43,.25); }
+
+/* Edition toggle */
+.edition-toggle { display: flex; gap: 0; border: 2px solid rgba(201,162,39,.4); overflow: hidden; margin: .75rem 0; }
+.edition-btn { flex: 1; font-family: 'Cinzel', serif; font-size: .85rem; letter-spacing: .1em; padding: .75rem; border: none; background: transparent; color: var(--stone-light); cursor: pointer; transition: all .2s; text-transform: uppercase; }
+.edition-btn.active { background: var(--gold); color: var(--ink); font-weight: 700; }
+.edition-btn:hover:not(.active) { background: rgba(201,162,39,.1); color: var(--gold); }
+
+.edition-desc { font-size: .82rem; color: var(--stone-light); font-style: italic; line-height: 1.6; padding: .75rem; background: rgba(0,0,0,.25); border: 1px solid rgba(201,162,39,.1); margin-top: .5rem; }
+
+/* Map section */
+.map-area-admin { background: rgba(0,0,0,.4); border: 1px solid rgba(201,162,39,.2); position: relative; overflow: auto; min-height: 350px; }
+.map-canvas-admin { position: relative; min-width: 600px; min-height: 350px; padding: 1.5rem; }
+.map-room-admin { position: absolute; width: 100px; min-height: 60px; border: 2px solid rgba(201,162,39,.4); background: rgba(20,16,28,.95); padding: .4rem; cursor: pointer; transition: all .2s; transform: translate(-50%,-50%); text-align: center; z-index: 10; font-size: .6rem; }
+.map-room-admin:hover { border-color: var(--gold); }
+.map-room-admin.current-room-admin { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,162,39,.3); }
+.map-room-admin.cleared-admin { border-color: var(--emerald-bright); }
+.map-room-admin.boss-admin { border-color: var(--blood-bright); }
+.map-room-admin.fog-admin { opacity: .35; }
+svg.admin-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+/* Room / Monster editor (embedded) */
+.editor-tabs { display: flex; border-bottom: 1px solid rgba(201,162,39,.2); margin-bottom: 1rem; }
+.etab { font-family: 'Cinzel', serif; font-size: .72rem; letter-spacing: .08em; padding: .5rem 1rem; border: none; border-bottom: 2px solid transparent; background: transparent; color: var(--stone-light); cursor: pointer; transition: all .15s; text-transform: uppercase; }
+.etab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-pane { display: none; } .tab-pane.active { display: block; }
+
+/* List items */
+.mgmt-list { max-height: 240px; overflow-y: auto; margin-bottom: .75rem; }
+.mgmt-item { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border: 1px solid rgba(201,162,39,.15); margin-bottom: .25rem; font-size: .82rem; cursor: pointer; transition: background .1s; }
+.mgmt-item:hover { background: rgba(201,162,39,.05); border-color: rgba(201,162,39,.3); }
+.mgmt-item.selected { border-color: var(--gold); background: rgba(201,162,39,.08); }
+.mgmt-item-name { flex: 1; font-family: 'Cinzel', serif; font-size: .82rem; color: var(--parchment); }
+.mgmt-item-meta { font-size: .7rem; color: var(--stone-light); }
+.mgmt-item-actions { display: flex; gap: .25rem; }
+
+.editor-form { background: rgba(0,0,0,.2); border: 1px solid rgba(201,162,39,.15); padding: 1rem; }
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: .6rem; }
+.f-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; margin-bottom: .6rem; }
+.f-group { margin-bottom: .6rem; }
+
+/* Char management */
+.char-mgmt-item { display: flex; align-items: center; gap: .5rem; padding: .6rem .75rem; border: 1px solid rgba(201,162,39,.15); margin-bottom: .4rem; }
+.char-mgmt-name { flex: 1; font-family: 'Cinzel', serif; font-size: .88rem; color: var(--parchment); }
+.char-mgmt-meta { font-size: .75rem; color: var(--stone-light); }
+
+/* Auth */
+.admin-auth { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.admin-auth-box { background: linear-gradient(135deg,#1e1828,#14101c); border: 2px solid var(--blood-bright); padding: 3rem; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(192,57,43,.25); }
+.admin-auth-box h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--blood-bright); margin-bottom: .5rem; }
+
+/* Inspiration admin */
+.inspo-item { display: flex; align-items: center; gap: .5rem; padding: .5rem .6rem; border: 1px solid rgba(201,162,39,.15); margin-bottom: .3rem; }
+.inspo-name { flex: 1; font-family: 'Cinzel', serif; font-size: .82rem; }
+</style>
+</head>
+<body>
+<!-- No nav — this page is unlisted -->
+
+<div id="adminAuthScreen" class="admin-auth" style="display:none">
+  <div class="admin-auth-box">
+    <div style="font-size:3rem;margin-bottom:1rem;color:var(--blood-bright)">⚔</div>
+    <h1>DM SCREEN</h1>
+    <p style="color:var(--stone-light);font-style:italic;margin-bottom:2rem">Dungeon Master access only</p>
+    <div style="margin-bottom:1rem">
+      <label>DM Password</label>
+      <input type="password" id="adminPwInput" placeholder="Enter DM password..." style="text-align:center" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    </div>
+    <button class="btn btn-danger" onclick="doAdminLogin()" style="width:100%">Enter DM Screen</button>
+    <div id="adminAuthError" style="color:var(--blood-bright);font-size:.85rem;margin-top:.75rem;min-height:1.2rem"></div>
+    <div style="margin-top:1.5rem">
+      <a href="index.html" style="color:var(--stone-light);font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:.1em">← Return to Game</a>
+    </div>
+  </div>
+</div>
+
+<div id="adminMain" style="display:none;flex:1;flex-direction:column">
+  <div style="background:linear-gradient(180deg,#0d0a10,#1a1520);border-bottom:2px solid var(--blood-bright);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(192,57,43,.2)">
+    <div style="font-family:'Cinzel',serif;font-size:1.1rem;color:var(--blood-bright);letter-spacing:.1em">⚔ DM SCREEN</div>
+    <div style="display:flex;gap:.5rem">
+      <a href="index.html" class="btn btn-sm">← Game</a>
+      <a href="map.html" class="btn btn-sm">Map</a>
+      <button class="btn btn-sm btn-danger" onclick="E.AUTH.logout();location.href='index.html'">Log Out</button>
+    </div>
+  </div>
+
+  <div class="admin-container">
+    <div class="admin-grid">
+
+      <!-- EDITION TOGGLE -->
+      <div class="admin-section">
+        <div class="admin-section-title">📖 Ruleset Edition</div>
+        <div class="edition-toggle">
+          <button class="edition-btn" id="btn5e" onclick="setEdition('5e')">D&D 5th Edition</button>
+          <button class="edition-btn" id="btn1e" onclick="setEdition('1e')">AD&D 1st Edition</button>
+        </div>
+        <div class="edition-desc" id="editionDesc">Loading...</div>
+        <div style="margin-top:.75rem;font-size:.78rem;color:var(--stone-light)">
+          This affects all new character sheets, skill lists, saving throws, and class options.
+          Existing character sheets retain their original edition.
+        </div>
+      </div>
+
+      <!-- DUNGEON MAP -->
+      <div class="admin-section" style="grid-column:span 2">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <div class="admin-section-title" style="margin:0">🗺 Dungeon Map (Full View)</div>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn btn-sm" onclick="refreshMap()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="adminMapStatus" style="font-size:.82rem;color:var(--stone-light);margin-bottom:.75rem;font-style:italic">Loading map...</div>
+        <div class="map-area-admin">
+          <div class="map-canvas-admin" id="adminMapCanvas">
+            <svg class="admin-svg" id="adminMapSvg"></svg>
+          </div>
+        </div>
+        <div class="map-legend" style="margin-top:.5rem;padding:.5rem;display:flex;gap:.75rem;flex-wrap:wrap;font-size:.75rem;color:var(--stone-light)">
+          <span>★ Current</span><span style="color:var(--emerald-bright)">✓ Cleared</span>
+          <span style="color:var(--blood-bright)">☠ Boss</span><span style="color:#7b68ee">⚑ Start</span>
+          <span style="opacity:.4">◻ Unexplored</span>
+        </div>
+      </div>
+
+      <!-- ROOM EDITOR -->
+      <div class="admin-section">
+        <div class="admin-section-title">🚪 Room Editor</div>
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+          <button class="btn btn-sm btn-success" onclick="newRoom()">+ New Room</button>
+          <span style="font-size:.75rem;color:var(--stone-light);line-height:2">
+            <span id="customRoomCount">0</span> custom · <span id="defaultRoomCount">15</span> built-in
+          </span>
+        </div>
+        <div class="mgmt-list" id="roomMgmtList">Loading...</div>
+        <div id="roomEditorForm" style="display:none" class="editor-form">
+          <div class="f-row">
+            <div class="f-group"><label>Name</label><input type="text" id="re_name" placeholder="Room name..."></div>
+            <div class="f-group"><label>Type</label><select id="re_type">
+              <option>combat</option><option>puzzle</option><option>treasure</option>
+              <option>exploration</option><option>boss</option><option>social</option>
+            </select></div>
+          </div>
+          <div class="f-row">
+            <div class="f-group"><label>Min Level</label><input type="number" id="re_minLevel" min="1" max="20" value="1"></div>
+            <div class="f-group"><label>Max Level</label><input type="number" id="re_maxLevel" min="1" max="20" value="20"></div>
+          </div>
+          <div class="f-group"><label>Description</label><textarea id="re_desc" rows="2" placeholder="What the players see..."></textarea></div>
+          <div class="f-group"><label>Flavor</label><textarea id="re_flavor" rows="2" placeholder="Atmospheric detail..."></textarea></div>
+          <div style="display:flex;gap:.5rem;margin-top:.75rem">
+            <button class="btn btn-sm btn-success" onclick="saveRoom()" style="flex:1">Save Room</button>
+            <button class="btn btn-sm" onclick="cancelRoomEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONSTER EDITOR -->
+      <div class="admin-section">
+        <div class="admin-section-title">☠ Monster Editor</div>
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+          <button class="btn btn-sm btn-success" onclick="newMonster()">+ New Monster</button>
+          <input type="text" id="monSearch" placeholder="Search..." style="font-size:.8rem;padding:.35rem .6rem;flex:1" oninput="renderMonsterMgmtList()">
+        </div>
+        <div class="mgmt-list" id="monsterMgmtList">Loading...</div>
+        <div id="monsterEditorForm" style="display:none" class="editor-form">
+          <div class="f-row">
+            <div class="f-group"><label>Name</label><input type="text" id="me_name" placeholder="Monster name..."></div>
+            <div class="f-group"><label>Type</label><select id="me_type">
+              <option>humanoid</option><option>undead</option><option>beast</option><option>dragon</option>
+              <option>fiend</option><option>aberration</option><option>construct</option><option>monstrosity</option><option>ooze</option><option>giant</option>
+            </select></div>
+          </div>
+          <div class="f-row-3">
+            <div class="f-group"><label>CR</label><select id="me_cr" onchange="autoXP()">
+              ${['0','1/8','1/4','1/2','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25'].map(cr=>`<option>${cr}</option>`).join('')}
+            </select></div>
+            <div class="f-group"><label>HP</label><input type="number" id="me_hp" min="1" value="10"></div>
+            <div class="f-group"><label>AC</label><input type="number" id="me_ac" min="1" value="10"></div>
+          </div>
+          <div class="f-row">
+            <div class="f-group"><label>Attack</label><input type="text" id="me_attack" value="+3"></div>
+            <div class="f-group"><label>Damage</label><input type="text" id="me_damage" value="1d6+2"></div>
+          </div>
+          <div class="f-row">
+            <div class="f-group"><label>XP</label><input type="number" id="me_xp" value="200"></div>
+            <div class="f-group"><label>Size</label><select id="me_size">
+              <option>Tiny</option><option>Small</option><option selected>Medium</option><option>Large</option><option>Huge</option><option>Gargantuan</option>
+            </select></div>
+          </div>
+          <div class="f-group">
+            <label style="display:flex;align-items:center;gap:.5rem;text-transform:none;color:var(--parchment)">
+              <input type="checkbox" id="me_isBoss" style="width:auto;accent-color:var(--blood-bright)">
+              <span style="font-family:'Cinzel',serif;font-size:.7rem;color:var(--blood-bright);text-transform:uppercase">☠ Boss Monster</span>
+            </label>
+          </div>
+          <div class="f-group"><label>Traits / Special Abilities</label><textarea id="me_traits" rows="2" placeholder="Magic Resistance..."></textarea></div>
+          <div style="display:flex;gap:.5rem;margin-top:.75rem">
+            <button class="btn btn-sm btn-success" onclick="saveMonster()" style="flex:1">Save Monster</button>
+            <button class="btn btn-sm" onclick="cancelMonsterEdit()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARACTER MANAGEMENT (DM view) -->
+      <div class="admin-section">
+        <div class="admin-section-title">⚔ Character Management</div>
+        <div id="charMgmtList" style="max-height:280px;overflow-y:auto;margin-bottom:.75rem">
+          <div style="color:var(--stone-light);font-style:italic;font-size:.85rem">Loading...</div>
+        </div>
+        <div style="font-size:.78rem;color:var(--stone-light)">As DM you can delete characters and manage inspiration. PINs cannot be removed without the player's PIN.</div>
+      </div>
+
+      <!-- INSPIRATION MANAGER -->
+      <div class="admin-section">
+        <div class="admin-section-title">✦ Inspiration Tokens</div>
+        <p style="font-size:.82rem;color:var(--stone-light);margin-bottom:.75rem">Award inspiration to reward great roleplay.</p>
+        <div id="inspoList" style="max-height:250px;overflow-y:auto;margin-bottom:.75rem">
+          <div style="color:var(--stone-light);font-style:italic;font-size:.85rem">Loading...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span><a href="thanks.html" class="copyright" title="">©</a>&nbsp; Designed by grapebiscuits &nbsp;·&nbsp; <span id="footerDate"></span></span>
+</footer>
+
+<script src="engine.js"></script>
+<script>
+const E = DungeonEngine;
+let editingRoomKey = null, editingMonsterKey = null, isNewRoom = false, isNewMonster = false;
+let currentEdition = '5e';
+
+const crXP = {'0':10,'1/8':25,'1/4':50,'1/2':100,'1':200,'2':450,'3':700,'4':1100,'5':1800,'6':2300,'7':2900,'8':3900,'9':5000,'10':5900,'11':7200,'12':8400,'13':10000,'14':11500,'15':13000,'16':15000,'17':18000,'18':20000,'19':22000,'20':25000,'21':33000,'22':41000,'23':50000};
+
+document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+// ---- AUTH ----
+async function init() {
+  if (!E.AUTH.checkAdmin()) {
+    document.getElementById('adminAuthScreen').style.display = 'flex';
+    document.getElementById('adminMain').style.display = 'none';
+    document.getElementById('adminPwInput').addEventListener('keydown', e => { if(e.key==='Enter') doAdminLogin(); });
+  } else {
+    document.getElementById('adminAuthScreen').style.display = 'none';
+    document.getElementById('adminMain').style.display = 'flex';
+    await loadAll();
+  }
+}
+
+async function doAdminLogin() {
+  const pw = document.getElementById('adminPwInput').value;
+  const result = E.AUTH.login(pw);
+  if (result === 'admin') {
+    document.getElementById('adminAuthScreen').style.display = 'none';
+    document.getElementById('adminMain').style.display = 'flex';
+    await loadAll();
+  } else {
+    document.getElementById('adminAuthError').textContent = 'Incorrect DM password.';
+    document.getElementById('adminPwInput').value = '';
+  }
+}
+
+async function loadAll() {
+  const settings = await E.getAdminSettings();
+  currentEdition = settings.edition || '5e';
+  updateEditionUI();
+  await refreshMap();
+  await renderRoomMgmtList();
+  await renderMonsterMgmtList();
+  await renderCharMgmt();
+  await renderInspoList();
+}
+
+// ---- EDITION ----
+async function setEdition(ed) {
+  currentEdition = ed;
+  const settings = await E.getAdminSettings();
+  settings.edition = ed;
+  await E.setAdminSettings(settings);
+  updateEditionUI();
+}
+
+function updateEditionUI() {
+  document.getElementById('btn5e').classList.toggle('active', currentEdition === '5e');
+  document.getElementById('btn1e').classList.toggle('active', currentEdition === '1e');
+  document.getElementById('editionDesc').textContent = currentEdition === '5e'
+    ? 'D&D 5th Edition: Proficiency bonuses, advantage/disadvantage, d20 skill checks. Classes and skills use the 5e SRD.'
+    : 'AD&D 1st Edition: THAC0 attack system, separate saving throw categories, class/race restrictions. A more lethal, old-school experience.';
+}
+
+// ---- MAP ----
+async function refreshMap() {
+  const state = await E.getState();
+  if (!state.started || !state.mapRooms || !state.mapRooms.length) {
+    document.getElementById('adminMapStatus').textContent = 'No active dungeon run. Start a game to see the map.';
+    return;
+  }
+  const rooms = state.mapRooms;
+  const cleared = rooms.filter(r=>r.cleared).length;
+  document.getElementById('adminMapStatus').textContent = `${rooms.length} rooms · ${rooms.filter(r=>r.visited).length} visited · ${cleared} cleared · Level ${state.dungeonLevel}`;
+  
+  // Layout
+  const positions = computeLayout(rooms);
+  renderAdminMap(rooms, positions, state.currentRoom);
+}
+
+function computeLayout(rooms) {
+  const positions = new Array(rooms.length).fill(null);
+  const HGAP = 150, VGAP = 110;
+  const visited = new Set();
+  const queue = [{idx:0,col:0,row:0}];
+  const colRowSet = new Set();
+  while (queue.length) {
+    const {idx,col,row} = queue.shift();
+    if (visited.has(idx)) continue;
+    visited.add(idx);
+    let finalRow = row;
+    while (colRowSet.has(`${col},${finalRow}`)) finalRow++;
+    colRowSet.add(`${col},${finalRow}`);
+    positions[idx] = {x:60+col*HGAP,y:60+finalRow*VGAP};
+    const children = (rooms[idx].connections||[]).filter(c=>!visited.has(c));
+    children.forEach((child,i) => queue.push({idx:child,col:col+1,row:finalRow+i}));
+  }
+  rooms.forEach((r,i) => { if(!positions[i]) positions[i]={x:60+(i%4)*150,y:60+Math.floor(i/4)*110}; });
+  return positions;
+}
+
+function renderAdminMap(rooms, positions, currentRoom) {
+  const canvas = document.getElementById('adminMapCanvas');
+  const svg = document.getElementById('adminMapSvg');
+  const maxX = Math.max(...positions.map(p=>p.x))+130, maxY = Math.max(...positions.map(p=>p.y))+90;
+  canvas.style.minWidth = maxX+'px'; canvas.style.minHeight = maxY+'px';
+  const typeIcons = {combat:'⚔',puzzle:'🔮',treasure:'💰',exploration:'🔍',boss:'💀',social:'💬'};
+  
+  // SVG lines
+  const lines = [];
+  rooms.forEach((room,i) => {
+    (room.connections||[]).forEach(j => {
+      if(j>i) lines.push(`<line x1="${positions[i].x}" y1="${positions[i].y}" x2="${positions[j].x}" y2="${positions[j].y}" stroke="rgba(201,162,39,0.3)" stroke-width="2"/>`);
+    });
+  });
+  svg.innerHTML = lines.join('');
+  
+  canvas.querySelectorAll('.map-room-admin').forEach(el=>el.remove());
+  rooms.forEach((room,i) => {
+    const div = document.createElement('div');
+    div.className = `map-room-admin${i===currentRoom?' current-room-admin':''}${room.cleared?' cleared-admin':''}${room.isBoss?' boss-admin':''}${!room.visited?' fog-admin':''}`;
+    div.style.left = positions[i].x+'px'; div.style.top = positions[i].y+'px';
+    div.innerHTML = `<div style="font-size:1rem">${typeIcons[room.type]||'🚪'}</div><div style="font-family:'Cinzel',serif;font-size:.55rem;color:var(--parchment);line-height:1.2">${room.name}</div>
+      <div style="font-size:.5rem;color:var(--stone-light);margin-top:2px">${room.type}${room.cleared?' ✓':''}${i===currentRoom?' ★':''}</div>`;
+    canvas.appendChild(div);
+  });
+}
+
+// ---- ROOMS ----
+async function renderRoomMgmtList() {
+  const custom = await E.getCustomRooms();
+  const all = [...E.DEFAULT_ROOMS.map(r=>({...r,isBuiltIn:true})), ...custom];
+  document.getElementById('customRoomCount').textContent = custom.length;
+  const list = document.getElementById('roomMgmtList');
+  list.innerHTML = all.map(r => `
+    <div class="mgmt-item ${r._fbKey===editingRoomKey?'selected':''} ${r.isBuiltIn?'':''}">
+      <div style="font-size:1rem;flex-shrink:0">${{combat:'⚔',puzzle:'🔮',treasure:'💰',exploration:'🔍',boss:'💀',social:'💬'}[r.type]||'🚪'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="mgmt-item-name">${r.name}${r.isBuiltIn?'':' <span style="font-size:.6rem;color:var(--emerald-bright);border:1px solid currentColor;padding:1px 4px">custom</span>'}</div>
+        <div class="mgmt-item-meta">Lv.${r.minLevel}–${r.maxLevel} · ${r.type}</div>
+      </div>
+      <div class="mgmt-item-actions">
+        <button class="btn btn-sm" onclick="selectRoom('${r._fbKey||r.id}',${!!r.isBuiltIn})" style="font-size:.62rem;padding:.15rem .4rem">${r.isBuiltIn?'Dup':'Edit'}</button>
+        ${!r.isBuiltIn?`<button class="btn btn-sm btn-danger" onclick="deleteRoom('${r._fbKey}')" style="font-size:.62rem;padding:.15rem .4rem">✕</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function newRoom() {
+  editingRoomKey = null; isNewRoom = true;
+  document.getElementById('re_name').value='';
+  document.getElementById('re_desc').value='';
+  document.getElementById('re_flavor').value='';
+  document.getElementById('re_type').value='combat';
+  document.getElementById('re_minLevel').value=1;
+  document.getElementById('re_maxLevel').value=20;
+  document.getElementById('roomEditorForm').style.display='block';
+}
+
+async function selectRoom(id, isBuiltIn) {
+  const all = await E.getAllRooms();
+  const room = all.find(r=>(r._fbKey||r.id)===id);
+  if(!room) return;
+  if(isBuiltIn) { await duplicateRoomFromBuiltIn(room); return; }
+  editingRoomKey = room._fbKey;
+  isNewRoom = false;
+  document.getElementById('re_name').value = room.name||'';
+  document.getElementById('re_desc').value = room.description||'';
+  document.getElementById('re_flavor').value = room.flavor||'';
+  document.getElementById('re_type').value = room.type||'combat';
+  document.getElementById('re_minLevel').value = room.minLevel||1;
+  document.getElementById('re_maxLevel').value = room.maxLevel||20;
+  document.getElementById('roomEditorForm').style.display='block';
+}
+
+async function duplicateRoomFromBuiltIn(room) {
+  const dup = {...room, name:room.name+' (Copy)', isCustom:true};
+  delete dup.id; delete dup._fbKey;
+  const saved = await E.saveCustomRoom(dup);
+  editingRoomKey = saved._fbKey; isNewRoom = false;
+  document.getElementById('re_name').value = saved.name;
+  document.getElementById('re_desc').value = saved.description||'';
+  document.getElementById('re_flavor').value = saved.flavor||'';
+  document.getElementById('re_type').value = saved.type||'combat';
+  document.getElementById('re_minLevel').value = saved.minLevel||1;
+  document.getElementById('re_maxLevel').value = saved.maxLevel||20;
+  document.getElementById('roomEditorForm').style.display='block';
+  await renderRoomMgmtList();
+}
+
+async function saveRoom() {
+  const name = document.getElementById('re_name').value.trim();
+  if(!name){alert('Room name required.');return;}
+  const data = {
+    name, type:document.getElementById('re_type').value,
+    description:document.getElementById('re_desc').value.trim(),
+    flavor:document.getElementById('re_flavor').value.trim(),
+    minLevel:parseInt(document.getElementById('re_minLevel').value)||1,
+    maxLevel:parseInt(document.getElementById('re_maxLevel').value)||20,
+    exits:['north','south'],
+  };
+  if(editingRoomKey) data._fbKey = editingRoomKey;
+  await E.saveCustomRoom(data);
+  cancelRoomEdit();
+  await renderRoomMgmtList();
+}
+
+async function deleteRoom(fbKey) {
+  if(!confirm('Delete this custom room?')) return;
+  await E.deleteCustomRoom(fbKey);
+  cancelRoomEdit();
+  await renderRoomMgmtList();
+}
+
+function cancelRoomEdit() {
+  editingRoomKey=null; isNewRoom=false;
+  document.getElementById('roomEditorForm').style.display='none';
+}
+
+// ---- MONSTERS ----
+async function renderMonsterMgmtList() {
+  const custom = await E.getCustomMonsters();
+  const search = document.getElementById('monSearch').value.toLowerCase();
+  const all = [...E.DEFAULT_MONSTERS.map(m=>({...m,isBuiltIn:true})), ...custom];
+  const filtered = search ? all.filter(m=>m.name.toLowerCase().includes(search)) : all;
+  const crVal = cr => {if(cr==='1/8')return.125;if(cr==='1/4')return.25;if(cr==='1/2')return.5;return parseFloat(cr)||0;};
+  filtered.sort((a,b)=>crVal(a.cr)-crVal(b.cr));
+  const list = document.getElementById('monsterMgmtList');
+  list.innerHTML = filtered.map(m=>`
+    <div class="mgmt-item ${m._fbKey===editingMonsterKey?'selected':''}">
+      <div style="flex-shrink:0;font-family:'Cinzel',serif;font-size:.65rem;min-width:32px;text-align:center;color:var(--gold)">CR ${m.cr}</div>
+      <div style="flex:1;min-width:0">
+        <div class="mgmt-item-name">${m.name}${m.isBoss?'<span style="font-size:.6rem;color:var(--blood-bright);border:1px solid currentColor;padding:1px 4px;margin-left:4px">BOSS</span>':''}${m.isBuiltIn?'':' <span style="font-size:.6rem;color:var(--emerald-bright);border:1px solid currentColor;padding:1px 4px">custom</span>'}</div>
+        <div class="mgmt-item-meta">${m.size} ${m.type} · HP ${m.hp} · AC ${m.ac}</div>
+      </div>
+      <div class="mgmt-item-actions">
+        <button class="btn btn-sm" onclick="selectMonster('${m._fbKey||m.id}',${!!m.isBuiltIn})" style="font-size:.62rem;padding:.15rem .4rem">${m.isBuiltIn?'Dup':'Edit'}</button>
+        ${!m.isBuiltIn?`<button class="btn btn-sm btn-danger" onclick="deleteMonster('${m._fbKey}')" style="font-size:.62rem;padding:.15rem .4rem">✕</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function newMonster() {
+  editingMonsterKey=null; isNewMonster=true;
+  ['me_name','me_traits'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('me_type').value='humanoid';
+  document.getElementById('me_cr').value='1';
+  document.getElementById('me_hp').value=10;
+  document.getElementById('me_ac').value=10;
+  document.getElementById('me_attack').value='+3';
+  document.getElementById('me_damage').value='1d6+2';
+  document.getElementById('me_xp').value=200;
+  document.getElementById('me_size').value='Medium';
+  document.getElementById('me_isBoss').checked=false;
+  document.getElementById('monsterEditorForm').style.display='block';
+}
+
+async function selectMonster(id, isBuiltIn) {
+  const all = await E.getAllMonsters();
+  const m = all.find(x=>(x._fbKey||x.id)===id);
+  if(!m) return;
+  if(isBuiltIn) { await duplicateMonsterFromBuiltIn(m); return; }
+  editingMonsterKey = m._fbKey; isNewMonster=false;
+  document.getElementById('me_name').value=m.name||'';
+  document.getElementById('me_type').value=m.type||'humanoid';
+  document.getElementById('me_cr').value=m.cr||'1';
+  document.getElementById('me_hp').value=m.hp||10;
+  document.getElementById('me_ac').value=m.ac||10;
+  document.getElementById('me_attack').value=m.attack||'+3';
+  document.getElementById('me_damage').value=m.damage||'1d6+2';
+  document.getElementById('me_xp').value=m.xp||200;
+  document.getElementById('me_size').value=m.size||'Medium';
+  document.getElementById('me_isBoss').checked=m.isBoss||false;
+  document.getElementById('me_traits').value=m.traits||'';
+  document.getElementById('monsterEditorForm').style.display='block';
+}
+
+async function duplicateMonsterFromBuiltIn(m) {
+  const dup={...m,name:m.name+' (Copy)',isCustom:true};
+  delete dup.id; delete dup._fbKey;
+  const saved = await E.saveCustomMonster(dup);
+  editingMonsterKey=saved._fbKey; isNewMonster=false;
+  selectMonster(saved._fbKey,false);
+  await renderMonsterMgmtList();
+}
+
+function autoXP() {
+  const cr=document.getElementById('me_cr').value;
+  document.getElementById('me_xp').value=crXP[cr]||200;
+}
+
+async function saveMonster() {
+  const name=document.getElementById('me_name').value.trim();
+  if(!name){alert('Monster name required.');return;}
+  const data={
+    name, type:document.getElementById('me_type').value,
+    cr:document.getElementById('me_cr').value,
+    hp:parseInt(document.getElementById('me_hp').value)||10,
+    ac:parseInt(document.getElementById('me_ac').value)||10,
+    attack:document.getElementById('me_attack').value.trim(),
+    damage:document.getElementById('me_damage').value.trim(),
+    xp:parseInt(document.getElementById('me_xp').value)||200,
+    size:document.getElementById('me_size').value,
+    isBoss:document.getElementById('me_isBoss').checked,
+    traits:document.getElementById('me_traits').value.trim(),
+  };
+  if(editingMonsterKey) data._fbKey=editingMonsterKey;
+  await E.saveCustomMonster(data);
+  cancelMonsterEdit();
+  await renderMonsterMgmtList();
+}
+
+async function deleteMonster(fbKey) {
+  if(!confirm('Delete this custom monster?')) return;
+  await E.deleteCustomMonster(fbKey);
+  cancelMonsterEdit();
+  await renderMonsterMgmtList();
+}
+
+function cancelMonsterEdit() {
+  editingMonsterKey=null; isNewMonster=false;
+  document.getElementById('monsterEditorForm').style.display='none';
+}
+
+// ---- CHARACTER MANAGEMENT ----
+async function renderCharMgmt() {
+  const chars = await E.getCharacters();
+  const list = document.getElementById('charMgmtList');
+  if(!chars.length){list.innerHTML='<div style="color:var(--stone-light);font-style:italic;font-size:.85rem">No characters yet.</div>';return;}
+  list.innerHTML = chars.map(c=>`
+    <div class="char-mgmt-item">
+      <div style="flex:1">
+        <div class="char-mgmt-name">${c.name}${c.pinHash?'<span style="font-size:.6rem;border:1px solid rgba(100,90,140,.5);color:rgba(180,170,220,.7);padding:1px 4px;margin-left:4px;font-family:Cinzel,serif">🔒</span>':''}</div>
+        <div class="char-mgmt-meta">${c.race} ${c.class} Lv.${c.level} · ${c.edition||'5e'} · HP ${c.currentHP}/${c.maxHP}</div>
+      </div>
+      <div style="display:flex;gap:.3rem">
+        <button class="btn btn-sm btn-danger" onclick="adminDeleteChar('${c._fbKey}','${c.name}')" style="font-size:.65rem;padding:.2rem .4rem">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function adminDeleteChar(fbKey, name) {
+  if(!confirm(`Delete "${name}" permanently? This cannot be undone.`)) return;
+  await E.deleteCharacter(fbKey);
+  await renderCharMgmt();
+  await renderInspoList();
+}
+
+// ---- INSPIRATION ----
+async function renderInspoList() {
+  const chars = await E.getCharacters();
+  const list = document.getElementById('inspoList');
+  if(!chars.length){list.innerHTML='<div style="color:var(--stone-light);font-style:italic;font-size:.85rem">No characters.</div>';return;}
+  list.innerHTML = chars.map(c=>`
+    <div class="inspo-item">
+      <div class="inspo-name" style="color:${c.inspiration?'var(--gold-bright)':'var(--parchment)'}">${c.inspiration?'✦ ':''} ${c.name}</div>
+      <div style="font-size:.72rem;color:var(--stone-light);margin-right:.5rem">${c.class} ${c.level}</div>
+      <button class="btn btn-sm ${c.inspiration?'btn-danger':''}" onclick="toggleInspo('${c._fbKey}',${!c.inspiration})"
+        style="font-size:.65rem;padding:.2rem .5rem;border-color:${c.inspiration?'var(--blood-bright)':'rgba(201,162,39,.4)'};color:${c.inspiration?'var(--blood-bright)':'var(--stone-light)'}">
+        ${c.inspiration?'Revoke':'Grant'}
+      </button>
+    </div>`).join('');
+}
+
+async function toggleInspo(fbKey, grant) {
+  const chars = await E.getCharacters();
+  const char = chars.find(c=>c._fbKey===fbKey);
+  if(!char) return;
+  char.inspiration = grant;
+  await E.saveCharacter(char);
+  await renderInspoList();
+  await renderCharMgmt();
+}
+
+init();
+</script>
+</body>
+</html>
