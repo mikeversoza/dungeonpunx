@@ -117,8 +117,6 @@ svg.map-svg {
   <a href="index.html">Adventure</a>
   <a href="characters.html">Characters</a>
   <a href="map.html" class="active">Map</a>
-  <a href="rooms.html">Room Editor</a>
-  <a href="monsters.html">Monsters</a>
   <a href="import.html">Import Module</a>
 </nav>
 
@@ -178,9 +176,9 @@ let gameState = null;
 
 document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
 
-function init() {
+async function init() {
   if (!E.AUTH.check()) { window.location.href = 'index.html'; return; }
-  gameState = E.getState();
+  gameState = await E.getState();
   dmMode = gameState.dmMode || false;
   updateDMBtn();
 
@@ -204,7 +202,7 @@ function init() {
 
 function toggleDMMode() {
   dmMode = !dmMode;
-  if (gameState) { gameState.dmMode = dmMode; E.setState(gameState); }
+  if (gameState) { gameState.dmMode = dmMode; (async()=>await E.setState(gameState))(); }
   updateDMBtn();
   layoutAndRenderMap();
 }
