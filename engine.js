@@ -37,8 +37,8 @@ const DungeonEngine = (() => {
   };
 
   const AUTH = {
-    PASSWORD: 'DHwhars.0923',
-    ADMIN_PASSWORD: 'DMscreen.2024',
+    PASSWORD: 'joefigureditout',
+    ADMIN_PASSWORD: 'mikeetheforeverDM.0508',
     check: () => STORE.get('auth') === true,
     checkAdmin: () => STORE.get('adminAuth') === true,
     login: (pw) => {
