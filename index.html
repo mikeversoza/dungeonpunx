@@ -224,8 +224,6 @@
   <a href="index.html" class="active">Adventure</a>
   <a href="characters.html">Characters</a>
   <a href="map.html">Map</a>
-  <a href="rooms.html">Room Editor</a>
-  <a href="monsters.html">Monsters</a>
   <a href="import.html">Import Module</a>
 </nav>
 
@@ -466,18 +464,18 @@ let initiativeOrder = [], currentInitiative = 0;
 // ---- INIT ----
 document.getElementById('footerDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
 
-function init() {
+async function init() {
   if (!E.AUTH.check()) {
     showScreen('authScreen');
     document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   } else {
-    gameState = E.getState();
+    gameState = await E.getState();
     if (gameState.started) {
       showScreen('gameScreen');
       renderGame();
     } else {
       showScreen('setupScreen');
-      updatePlayerSlots();
+      await updatePlayerSlots();
     }
   }
 }
@@ -485,17 +483,18 @@ function init() {
 function showScreen(id) {
   ['authScreen','setupScreen','gameScreen'].forEach(s => {
     const el = document.getElementById(s);
-    el.style.display = s === id ? (s === 'gameScreen' ? 'flex' : 'flex') : 'none';
+    el.style.display = s === id ? 'flex' : 'none';
   });
 }
 
 // ---- AUTH ----
-function doLogin() {
+async function doLogin() {
   const pw = document.getElementById('passwordInput').value;
-  if (E.AUTH.login(pw)) {
-    gameState = E.getState();
+  const result = E.AUTH.login(pw);
+  if (result) {
+    gameState = await E.getState();
     showScreen('setupScreen');
-    updatePlayerSlots();
+    await updatePlayerSlots();
   } else {
     document.getElementById('authError').textContent = 'Incorrect password. The dungeon remains sealed.';
     document.getElementById('passwordInput').value = '';
@@ -503,9 +502,12 @@ function doLogin() {
 }
 
 // ---- SETUP ----
-function updatePlayerSlots() {
+async function updatePlayerSlots() {
   const n = parseInt(document.getElementById('numPlayers').value) || 4;
-  const chars = E.getCharacters();
+  const chars = await E.getCharacters();
+  const settings = await E.getAdminSettings();
+  const edition = settings.edition || '5e';
+  const classes = edition === '1e' ? E.D1E.classes : E.D5E.classes;
   const container = document.getElementById('playerSlotsSetup');
   container.innerHTML = '';
   for (let i = 0; i < n; i++) {
@@ -517,12 +519,12 @@ function updatePlayerSlots() {
         <label>Load Character Sheet</label>
         <select id="charSelect_${i}" onchange="loadCharacterInSlot(${i})">
           <option value="">— Manual Entry —</option>
-          ${chars.map(c => `<option value="${c.id}">${c.name} (${c.class} ${c.level})</option>`).join('')}
+          ${chars.map(c => `<option value="${c._fbKey}">${c.name} (${c.class} ${c.level})</option>`).join('')}
         </select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
         <div><label>Name</label><input type="text" id="pName_${i}" placeholder="Hero name..."></div>
-        <div><label>Class</label><select id="pClass_${i}">${E.D5E.classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Class</label><select id="pClass_${i}">${classes.map(c=>`<option>${c}</option>`).join('')}</select></div>
         <div><label>Level</label><input type="number" id="pLevel_${i}" min="1" max="20" value="1"></div>
         <div><label>Max HP</label><input type="number" id="pHP_${i}" min="1" value="10"></div>
         <div><label>AC</label><input type="number" id="pAC_${i}" min="1" value="10"></div>
@@ -532,10 +534,11 @@ function updatePlayerSlots() {
   }
 }
 
-function loadCharacterInSlot(i) {
+async function loadCharacterInSlot(i) {
   const sel = document.getElementById(`charSelect_${i}`).value;
   if (!sel) return;
-  const char = E.getCharacters().find(c => c.id === sel);
+  const chars = await E.getCharacters();
+  const char = chars.find(c => c._fbKey === sel);
   if (!char) return;
   document.getElementById(`pName_${i}`).value = char.name;
   document.getElementById(`pClass_${i}`).value = char.class;
@@ -544,46 +547,47 @@ function loadCharacterInSlot(i) {
   document.getElementById(`pAC_${i}`).value = char.ac;
 }
 
-function startGame() {
+async function startGame() {
   const n = parseInt(document.getElementById('numPlayers').value) || 4;
   const dungeonLevel = parseInt(document.getElementById('dungeonLevel').value) || 3;
+  const settings = await E.getAdminSettings();
+  const edition = settings.edition || '5e';
   const players = [];
   for (let i = 0; i < n; i++) {
     const name = document.getElementById(`pName_${i}`).value || `Hero ${i+1}`;
-    const charId = document.getElementById(`charSelect_${i}`).value;
+    const charKey = document.getElementById(`charSelect_${i}`).value;
     players.push({
-      id: charId || `p_${i}_${Date.now()}`,
+      id: charKey || `p_${i}_${Date.now()}`,
       name,
       class: document.getElementById(`pClass_${i}`).value,
       level: parseInt(document.getElementById(`pLevel_${i}`).value) || 1,
       maxHP: parseInt(document.getElementById(`pHP_${i}`).value) || 10,
       currentHP: parseInt(document.getElementById(`pHP_${i}`).value) || 10,
       ac: parseInt(document.getElementById(`pAC_${i}`).value) || 10,
-      charSheetId: charId || null,
+      charSheetKey: charKey || null,
     });
   }
 
-  const mapRooms = E.generateMap(players, dungeonLevel);
+  const mapRooms = await E.generateMap(players, dungeonLevel);
   gameState = {
     ...E.getDefaultState(),
-    started: true,
-    players,
-    dungeonLevel,
-    mapRooms,
-    currentRoom: 0,
-    visitedRooms: [0],
-    log: [],
-    totalXP: 0,
+    started: true, players, dungeonLevel, edition,
+    mapRooms, currentRoom: 0, visitedRooms: [0],
+    log: [], totalXP: 0,
   };
-  E.addLog(gameState, `The party descends into the dungeon. ${players.map(p=>p.name).join(', ')} begin their adventure.`, 'info');
-  E.setState(gameState);
+  E.addLog(gameState, `The party descends. ${players.map(p=>p.name).join(', ')} begin their adventure. [${edition.toUpperCase()} Rules]`, 'info');
+  await (async()=>await E.setState(gameState))();
   showScreen('gameScreen');
   renderGame();
 }
 
 // ---- GAME RENDER ----
+async function renderGameAsync() {
+  gameState = await E.getState();
+  renderGame();
+}
+
 function renderGame() {
-  gameState = E.getState();
   renderPlayers();
   renderRoom();
   renderLog();
@@ -751,7 +755,7 @@ function attackMonster() {
   lastRoll = null;
   document.getElementById('lastRoll').textContent = '';
   monsterCounterAttack();
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderMonsters();
   renderLog();
 }
@@ -784,13 +788,13 @@ function monsterCounterAttack() {
 
 function castSpell() {
   E.addLog(gameState, `A spell is cast! Roll damage and apply manually.`, 'info');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderLog();
 }
 
 function useAbility() {
   E.addLog(gameState, `Special ability used. Apply effects as appropriate.`, 'info');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderLog();
 }
 
@@ -804,7 +808,7 @@ function flee() {
   } else {
     E.addLog(gameState, `Escape attempt fails! (Roll: ${roll}) The monsters strike as you flee!`, 'combat');
     monsterCounterAttack();
-    E.setState(gameState);
+    (async()=>await E.setState(gameState))();
     renderLog();
   }
 }
@@ -829,7 +833,7 @@ function checkPuzzle() {
     document.getElementById('puzzleResult').innerHTML = '<span style="color:var(--blood-bright)">✗ Incorrect. The dungeon does not yield easily.</span>';
     E.addLog(gameState, 'Puzzle answer incorrect.', 'warning');
   }
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderLog();
   renderSessionLoot();
 }
@@ -850,7 +854,7 @@ function failPuzzle() {
   E.addLog(gameState, `Puzzle failed! ${trap ? `${trap.type} trap triggers for ${dmg} damage!` : `Trap deals ${dmg} damage!`}`, 'combat');
   document.getElementById('clearRoomBtn').style.display = 'block';
   document.getElementById('puzzleSection').style.display = 'none';
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderPlayers();
   renderLog();
   checkWinLose();
@@ -865,7 +869,7 @@ function collectTreasure() {
   document.getElementById('treasureSection').style.display = 'none';
   document.getElementById('clearRoomBtn').style.display = 'block';
   currentTreasure = null;
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderLog();
   renderSessionLoot();
 }
@@ -890,7 +894,7 @@ function damagePlayer(i) {
   if (dmg > 0) {
     gameState.players[i].currentHP = Math.max(0, gameState.players[i].currentHP - dmg);
     E.addLog(gameState, `${gameState.players[i].name} takes ${dmg} damage.`, 'combat');
-    E.setState(gameState);
+    (async()=>await E.setState(gameState))();
     renderPlayers();
     renderLog();
     checkWinLose();
@@ -902,7 +906,7 @@ function healPlayer(i) {
   if (heal > 0) {
     gameState.players[i].currentHP = Math.min(gameState.players[i].maxHP, gameState.players[i].currentHP + heal);
     E.addLog(gameState, `${gameState.players[i].name} is healed for ${heal} HP.`, 'success');
-    E.setState(gameState);
+    (async()=>await E.setState(gameState))();
     renderPlayers();
     renderLog();
   }
@@ -911,7 +915,7 @@ function healPlayer(i) {
 function revivePlayer(i) {
   gameState.players[i].currentHP = 1;
   E.addLog(gameState, `${gameState.players[i].name} is revived with 1 HP!`, 'success');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderPlayers();
   renderLog();
 }
@@ -925,12 +929,12 @@ function viewPlayer(i) {
 // ---- QUICK ACTIONS ----
 function useHealingPotion() {
   const alive = gameState.players.filter(p => p.currentHP > 0 && p.currentHP < p.maxHP);
-  if (!alive.length) { E.addLog(gameState, 'No one needs healing right now.', 'info'); E.setState(gameState); renderLog(); return; }
+  if (!alive.length) { E.addLog(gameState, 'No one needs healing right now.', 'info'); (async()=>await E.setState(gameState))(); renderLog(); return; }
   const target = alive.sort((a,b) => (a.currentHP/a.maxHP) - (b.currentHP/b.maxHP))[0];
   const heal = E.DICE.rollSum(2, 4) + 2;
   target.currentHP = Math.min(target.maxHP, target.currentHP + heal);
   E.addLog(gameState, `${target.name} drinks a healing potion and recovers ${heal} HP.`, 'success');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderPlayers();
   renderLog();
 }
@@ -942,7 +946,7 @@ function shortRest() {
     p.currentHP = Math.min(p.maxHP, p.currentHP + Math.max(1, heal));
   });
   E.addLog(gameState, 'The party takes a short rest. Hit dice spent.', 'success');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderPlayers();
   renderLog();
 }
@@ -950,7 +954,7 @@ function shortRest() {
 function longRest() {
   gameState.players.forEach(p => { p.currentHP = p.maxHP; });
   E.addLog(gameState, 'The party takes a long rest. All HP restored!', 'success');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderPlayers();
   renderLog();
 }
@@ -969,14 +973,14 @@ function searchRoom() {
     const target = gameState.players.filter(p=>p.currentHP>0)[0];
     if (target) { target.currentHP = Math.max(0, target.currentHP - E.DICE.roll(6)); renderPlayers(); checkWinLose(); }
   }
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderLog();
 }
 
 function openDoor() {
   const roll = E.DICE.roll(20);
   E.addLog(gameState, roll >= 10 ? `Force check succeeds! (${roll}) The door yields.` : `Force check fails. (${roll}) The door holds firm.`, roll>=10?'success':'warning');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderLog();
 }
 
@@ -991,7 +995,7 @@ function moveToRoom(idx) {
   currentPuzzle = null;
   currentTreasure = null;
   E.addLog(gameState, `The party moves to: ${room ? room.name : 'Unknown Room'}`, 'info');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderGame();
 }
 
@@ -999,13 +1003,17 @@ function clearRoom() {
   const room = gameState.mapRooms[gameState.currentRoom];
   if (room) room.cleared = true;
   currentEncounter = null;
+  // Clear initiative tracker after battle
+  initiativeOrder = [];
+  currentInitiative = 0;
+  renderInitiative();
   E.addLog(gameState, `Room cleared: ${room ? room.name : ''}`, 'success');
   // Check if boss room cleared = victory
   if (room && room.isBoss) {
     showVictory();
     return;
   }
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderRoom();
 }
 
@@ -1022,7 +1030,7 @@ function rollInitiative() {
   currentInitiative = 0;
   renderInitiative();
   E.addLog(gameState, `Initiative rolled! Order: ${initiativeOrder.map(i=>i.name).join(', ')}`, 'info');
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
   renderLog();
 }
 
@@ -1032,7 +1040,7 @@ function nextTurn() {
   gameState.turn++;
   renderInitiative();
   document.getElementById('turnCounter').textContent = gameState.turn;
-  E.setState(gameState);
+  (async()=>await E.setState(gameState))();
 }
 
 function renderInitiative() {
@@ -1082,7 +1090,7 @@ function checkWinLose() {
   const allDead = gameState.players.every(p => p.currentHP <= 0);
   if (allDead) {
     E.addLog(gameState, 'All players have fallen. The dungeon claims victory.', 'combat');
-    E.setState(gameState);
+    (async()=>await E.setState(gameState))();
     setTimeout(() => { document.getElementById('deathModal').style.display = 'flex'; }, 500);
   }
 }
@@ -1102,27 +1110,32 @@ function showVictory() {
 function confirmEndRun() { document.getElementById('endRunModal').style.display = 'flex'; }
 
 function endRunAndReset() {
-  // Save XP/loot back to character sheets
-  const chars = E.getCharacters();
-  gameState.players.forEach(p => {
-    if (p.charSheetId) {
-      const char = chars.find(c => c.id === p.charSheetId);
-      if (char) {
-        char.xp = (char.xp || 0) + (p.xpGained || 0);
-        char.currentHP = p.currentHP;
-        const newLoot = gameState.loot.filter((_, i) => i % gameState.players.length === gameState.players.indexOf(p));
-        char.loot = [...(char.loot || []), ...newLoot];
+  // Save XP/loot back to character sheets async
+  (async () => {
+    const chars = await E.getCharacters();
+    for (const p of gameState.players) {
+      if (p.charSheetKey) {
+        const char = chars.find(c => c._fbKey === p.charSheetKey);
+        if (char) {
+          char.xp = (char.xp || 0) + (p.xpGained || 0);
+          char.currentHP = p.currentHP;
+          const idx = gameState.players.indexOf(p);
+          const newLoot = (gameState.loot || []).filter((_, j) => j % gameState.players.length === idx);
+          char.loot = [...(char.loot || []), ...newLoot];
+          await E.saveCharacter(char);
+        }
       }
     }
-  });
-  E.saveCharacters(chars);
-  E.resetState();
-  closeModal('deathModal');
-  closeModal('victoryModal');
-  closeModal('endRunModal');
-  gameState = E.getDefaultState();
-  showScreen('setupScreen');
-  updatePlayerSlots();
+    await (async()=>await E.resetState())();
+    closeModal('deathModal');
+    closeModal('victoryModal');
+    closeModal('endRunModal');
+    gameState = E.getDefaultState();
+    initiativeOrder = [];
+    currentInitiative = 0;
+    showScreen('setupScreen');
+    await updatePlayerSlots();
+  })();
 }
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
