@@ -178,7 +178,10 @@ main { width:100%; max-width:700px; padding:1.5rem; flex:1; }
     <div class="boss-hp-label"><span>THE BOSS</span><span id="bossHPText">???</span></div>
     <div class="boss-hp-bg"><div class="boss-hp-fill" id="bossHPFill" style="width:100%"></div></div>
   </div>
-  <div><div class="phase-tag" id="phaseTag" style="color:var(--stone-light);border-color:var(--stone)">WAITING</div></div>
+  <div style="text-align:right">
+    <div class="phase-tag" id="phaseTag" style="color:var(--stone-light);border-color:var(--stone)">WAITING</div>
+    <div id="connStatus" style="font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:0.08em;margin-top:4px;color:var(--stone-light)">⏳ Connecting...</div>
+  </div>
 </header>
 
 <main>
@@ -312,12 +315,66 @@ main { width:100%; max-width:700px; padding:1.5rem; flex:1; }
 
 <script>
 const FB_URL = 'https://dungeon-8db6b-default-rtdb.firebaseio.com/goblinrush';
+
+// Connection status indicator
+let _fbOk = null;
+function setConnStatus(ok, msg) {
+  const el = document.getElementById('connStatus');
+  if (!el) return;
+  _fbOk = ok;
+  el.textContent = ok ? '🟢 Connected' : '🔴 ' + msg;
+  el.style.color = ok ? 'var(--goblin-bright)' : 'var(--blood-bright)';
+}
+
 const FB = {
-  get: async(p)=>{ try{const r=await fetch(`${FB_URL}/${p}.json`);return r.ok?r.json():null;}catch{return null;}},
-  set: async(p,d)=>{ try{await fetch(`${FB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return true;}catch{return false;}},
-  push: async(p,d)=>{ try{const r=await fetch(`${FB_URL}/${p}.json`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return r.ok?r.json():null;}catch{return null;}},
-  patch: async(p,d)=>{ try{await fetch(`${FB_URL}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return true;}catch{return false;}},
+  get: async (p) => {
+    try {
+      const r = await fetch(`${FB_URL}/${p}.json`);
+      const text = await r.text();
+      if (!r.ok || text.startsWith('"') && text.includes('not allow')) {
+        setConnStatus(false, 'Firebase rules blocked — set rules to allow read/write');
+        return null;
+      }
+      setConnStatus(true, '');
+      try { return JSON.parse(text); } catch { return null; }
+    } catch(e) { setConnStatus(false, 'Network error: ' + e.message); return null; }
+  },
+  set: async (p, d) => {
+    try {
+      const r = await fetch(`${FB_URL}/${p}.json`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)});
+      const text = await r.text();
+      if (!r.ok) { setConnStatus(false, 'Write blocked — check Firebase rules'); return false; }
+      setConnStatus(true, '');
+      return true;
+    } catch(e) { setConnStatus(false, 'Write error: ' + e.message); return false; }
+  },
+  push: async (p, d) => {
+    try {
+      const r = await fetch(`${FB_URL}/${p}.json`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)});
+      const text = await r.text();
+      if (!r.ok) { setConnStatus(false, 'Write blocked — check Firebase rules'); return null; }
+      setConnStatus(true, '');
+      try { return JSON.parse(text); } catch { return null; }
+    } catch(e) { setConnStatus(false, 'Push error: ' + e.message); return null; }
+  },
+  patch: async (p, d) => {
+    try {
+      const r = await fetch(`${FB_URL}/${p}.json`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)});
+      if (!r.ok) { setConnStatus(false, 'Patch blocked — check Firebase rules'); return false; }
+      setConnStatus(true, '');
+      return true;
+    } catch(e) { setConnStatus(false, 'Patch error: ' + e.message); return false; }
+  },
 };
+
+// Test connection on load
+(async () => {
+  setConnStatus(null, '');
+  document.getElementById('connStatus').textContent = '⏳ Connecting...';
+  const test = await FB.get('_ping');
+  // null is fine (key doesn't exist), error sets status itself
+  if (_fbOk === null) setConnStatus(true, '');
+})();
 
 let myCode=null, myRegion=null, myFbKey=null;
 let selectedAction=null, actionSubmitted=false, lastAction='attack';
