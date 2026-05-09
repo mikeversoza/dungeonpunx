@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOBLIN RUSH — How to Play</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --goblin: #3a7a2a;
+  --goblin-bright: #6ed44e;
+  --goblin-dark: #1e3d14;
+  --gold: #e8bc3c;
+  --gold-bright: #f5c518;
+  --blood: #c0392b;
+  --blood-bright: #ff5540;
+  --stone: #7a7a8e;
+  --stone-light: #d0d0e4;
+  --parchment: #f8f0d8;
+  --sapphire: #4aabef;
+  --violet: #b47ad0;
+  --emerald: #3edc81;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0d07;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(58,122,42,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 100%, rgba(192,57,43,0.1) 0%, transparent 55%);
+  color: var(--parchment);
+  font-family: 'Crimson Text', serif;
+  font-size: 18px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 4rem 1.5rem 3rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center top, rgba(58,122,42,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-icon { font-size: 5rem; margin-bottom: 0.5rem; display: block; }
+.hero-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 900;
+  color: var(--goblin-bright);
+  text-shadow: 0 0 40px rgba(110,212,78,0.4), 0 0 80px rgba(58,122,42,0.2);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+.hero-sub {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  color: var(--stone-light);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+.hero-blurb {
+  max-width: 580px;
+  margin: 0 auto 2.5rem;
+  font-size: 1.15rem;
+  color: var(--parchment);
+  font-style: italic;
+  line-height: 1.8;
+}
+
+/* CTA BUTTON */
+.cta-btn {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 1.1rem 3rem;
+  border: 3px solid var(--goblin-bright);
+  background: rgba(58,122,42,0.2);
+  color: var(--goblin-bright);
+  transition: all 0.2s;
+  clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+  box-shadow: 0 0 30px rgba(58,122,42,0.2);
+}
+.cta-btn:hover {
+  background: rgba(58,122,42,0.4);
+  box-shadow: 0 0 50px rgba(110,212,78,0.35);
+  transform: translateY(-2px);
+}
+
+/* DIVIDER */
+.divider {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 3rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(110,212,78,0.4), transparent);
+}
+
+/* CONTENT */
+.content {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+/* SECTION */
+.section { margin-bottom: 3rem; }
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(232,188,60,0.25);
+}
+
+/* HOW IT WORKS STEPS */
+.steps { display: flex; flex-direction: column; gap: 0.75rem; }
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(110,212,78,0.15);
+  padding: 1rem 1.25rem;
+}
+.step-num {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--goblin-bright);
+  min-width: 36px;
+  text-align: center;
+  line-height: 1;
+  padding-top: 0.1rem;
+}
+.step-body {}
+.step-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: var(--parchment);
+  letter-spacing: 0.06em;
+  margin-bottom: 0.2rem;
+}
+.step-desc { font-size: 0.95rem; color: var(--stone-light); line-height: 1.6; }
+
+/* ACTIONS GRID */
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.action-card {
+  background: rgba(0,0,0,0.35);
+  border: 2px solid;
+  padding: 1.25rem;
+  text-align: center;
+}
+.action-card-icon { font-size: 2.2rem; margin-bottom: 0.4rem; display: block; }
+.action-card-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
+}
+.action-card-desc { font-size: 0.88rem; color: var(--stone-light); line-height: 1.5; }
+.action-card.atk { border-color: rgba(255,85,64,0.5); }
+.action-card.atk .action-card-name { color: var(--blood-bright); }
+.action-card.def { border-color: rgba(74,171,239,0.5); }
+.action-card.def .action-card-name { color: var(--sapphire); }
+.action-card.heal { border-color: rgba(62,220,129,0.5); }
+.action-card.heal .action-card-name { color: var(--emerald); }
+
+/* ZONES */
+.zones-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.zone-card {
+  background: rgba(0,0,0,0.35);
+  border: 2px solid;
+  padding: 1rem;
+  text-align: center;
+}
+.zone-card-icon { font-size: 1.5rem; margin-bottom: 0.3rem; display: block; }
+.zone-card-name { font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 0.08em; }
+.zone-left { border-color: rgba(74,171,239,0.5); }
+.zone-left .zone-card-name { color: var(--sapphire); }
+.zone-center { border-color: rgba(232,188,60,0.5); }
+.zone-center .zone-card-name { color: var(--gold); }
+.zone-right { border-color: rgba(180,122,208,0.5); }
+.zone-right .zone-card-name { color: var(--violet); }
+
+/* TIPS */
+.tip-box {
+  background: rgba(58,122,42,0.1);
+  border: 2px solid rgba(110,212,78,0.35);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.tip-header {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  color: var(--goblin-bright);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.tip-text { font-size: 0.95rem; color: var(--parchment); line-height: 1.7; }
+
+.warning-box {
+  background: rgba(192,57,43,0.1);
+  border: 2px solid rgba(255,85,64,0.4);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.warning-header {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  color: var(--blood-bright);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* SECOND CTA */
+.cta-bottom {
+  text-align: center;
+  padding: 2rem 1.5rem 4rem;
+  border-top: 1px solid rgba(110,212,78,0.15);
+}
+.cta-bottom p { color: var(--stone-light); margin-bottom: 1.5rem; font-size: 1rem; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0d07; }
+::-webkit-scrollbar-thumb { background: var(--goblin); border-radius: 3px; }
+
+@keyframes wobble {
+  0%,100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+.wobble { display: inline-block; animation: wobble 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="hero-icon wobble">⚔️</span>
+  <h1 class="hero-title">GOBLIN RUSH</h1>
+  <div class="hero-sub">A multiplayer raid boss battle</div>
+  <p class="hero-blurb">
+    You and your fellow goblins against one terrifying boss. Every player picks an action each round.
+    Every choice matters. Coordinate. Survive. Win.
+  </p>
+  <a href="player.html" class="cta-btn">⚔ JOIN THE HORDE</a>
+</div>
+
+<div class="divider"></div>
+
+<div class="content">
+
+  <div class="section">
+    <div class="section-title">📜 How It Works</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Pick Your Code</div>
+          <div class="step-desc">Enter any 4-character code — your goblin's name on the battlefield. No one else can take it once you've claimed it.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Choose Your Flank</div>
+          <div class="step-desc">Join the Left, Center, or Right zone. This matters — the boss can target a whole zone at once with area attacks.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Wait for the Boss to Strike</div>
+          <div class="step-desc">The Boss goes first each round. Watch out for where they target — then brace for impact.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Choose Your Action — Fast</div>
+          <div class="step-desc">You have <strong style="color:var(--goblin-bright)">30 seconds</strong> to pick Attack, Defend, or Heal and hit Confirm. If time runs out your last action repeats automatically.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Fight Until One Side Falls</div>
+          <div class="step-desc">Kill the boss before it kills all of you. Every goblin that survives wins. Every goblin that falls... doesn't.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">⚔ Your Three Actions</div>
+    <div class="actions-grid">
+      <div class="action-card atk">
+        <span class="action-card-icon">⚔️</span>
+        <div class="action-card-name">Attack</div>
+        <div class="action-card-desc">Roll 1d6 damage against the boss. If you defended last round, you get a bonus +3 to your roll — your guard opens perfectly into a strike.</div>
+      </div>
+      <div class="action-card def">
+        <span class="action-card-icon">🛡️</span>
+        <div class="action-card-name">Defend</div>
+        <div class="action-card-desc">Take half damage from boss attacks this round. Smart when you know an area attack is coming your way.</div>
+      </div>
+      <div class="action-card heal">
+        <span class="action-card-icon">💚</span>
+        <div class="action-card-name">Heal</div>
+        <div class="action-card-desc">Recover 1d4 HP. Can't overheal past your max. Helps keep yourself — and your zone — in the fight.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🗺 The Three Zones</div>
+    <div class="zones-grid">
+      <div class="zone-card zone-left">
+        <span class="zone-card-icon">⬅</span>
+        <div class="zone-card-name">Left Flank</div>
+      </div>
+      <div class="zone-card zone-center">
+        <span class="zone-card-icon">🎯</span>
+        <div class="zone-card-name">Center</div>
+      </div>
+      <div class="zone-card zone-right">
+        <span class="zone-card-icon">➡</span>
+        <div class="zone-card-name">Right Flank</div>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      <div class="warning-header">⚠ Danger — Do Not Clump Up!</div>
+      <div class="tip-text">
+        The boss's area attacks hit <strong style="color:var(--blood-bright)">everyone in a zone at once</strong>. If your entire horde piles into Center, a single attack can devastate the whole group.
+        <strong style="color:var(--parchment)"> Spread out across all three zones</strong> to limit how much damage any one attack can do.
+        A split horde is a surviving horde.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">💡 Tactics & Tips</div>
+
+    <div class="tip-box">
+      <div class="tip-header">🛡→⚔ The Block-and-Strike Combo</div>
+      <div class="tip-text">Defending last round grants you <strong style="color:var(--goblin-bright)">+3 to your next Attack roll</strong>. Alternating Defend → Attack is a powerful rhythm — you limit damage while setting up a harder hit.</div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-header">💚 Zone Healing Saves Lives</div>
+      <div class="tip-text">If a goblin in your zone used Heal, any fallen comrades in that zone get <strong style="color:var(--goblin-bright)">advantage on their revival rolls</strong>. Keep a healer in each zone if you can.</div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-header">💀 Death Isn't Final — Yet</div>
+      <div class="tip-text">When you fall, you get <strong style="color:var(--goblin-bright)">3 chances to get back up</strong>. A successful roll brings you back with a sliver of HP. Fail all three and you're out for good.</div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-header">⏱ Don't Freeze Up</div>
+      <div class="tip-text">You have 30 seconds. If you do nothing, your last action <strong style="color:var(--gold)">repeats automatically</strong>. Make sure you set a good default — getting caught attacking when you're about to take a big hit hurts.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="cta-bottom">
+  <p>The boss is waiting. The horde needs you.</p>
+  <a href="player.html" class="cta-btn">⚔ JOIN THE HORDE</a>
+</div>
+
+</body>
+</html>
