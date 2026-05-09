@@ -106,6 +106,7 @@ body{background:#100808;background-image:radial-gradient(ellipse at 50% 0%,rgba(
     <div class="status-pill" id="topStatus" style="color:var(--stone-light);border-color:var(--stone)">WAITING</div>
     <button class="ctrl-btn ctrl-btn-start" id="startBtn" onclick="startBattle()">Start Battle</button>
     <button class="ctrl-btn ctrl-btn-reset" onclick="resetGame()">Reset All</button>
+    <div id="connStatus" style="font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.08em;color:var(--stone-light);min-width:100px;text-align:right">⏳ Connecting...</div>
   </div>
 </div>
 
@@ -243,12 +244,55 @@ body{background:#100808;background-image:radial-gradient(ellipse at 50% 0%,rgba(
 
 <script>
 const FB_URL='https://dungeon-8db6b-default-rtdb.firebaseio.com/goblinrush';
+
+let _fbOk = null;
+function setConnStatus(ok, msg) {
+  const el = document.getElementById('connStatus');
+  if (!el) return;
+  _fbOk = ok;
+  el.textContent = ok ? '🟢 Connected' : '🔴 ' + (msg || 'Disconnected');
+  el.style.color = ok ? 'var(--goblin-bright)' : 'var(--boss-bright)';
+}
+
 const FB={
-  get:async(p)=>{try{const r=await fetch(`${FB_URL}/${p}.json`);return r.ok?r.json():null;}catch{return null;}},
-  set:async(p,d)=>{try{await fetch(`${FB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return true;}catch{return false;}},
-  patch:async(p,d)=>{try{await fetch(`${FB_URL}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return true;}catch{return false;}},
-  del:async(p)=>{try{await fetch(`${FB_URL}/${p}.json`,{method:'DELETE'});return true;}catch{return false;}},
+  get: async(p)=>{
+    try{
+      const r=await fetch(`${FB_URL}/${p}.json`);
+      const text=await r.text();
+      if(!r.ok){setConnStatus(false,'Firebase blocked: '+text.slice(0,60));return null;}
+      setConnStatus(true,'');
+      try{return JSON.parse(text);}catch{return null;}
+    }catch(e){setConnStatus(false,'Network: '+e.message);return null;}
+  },
+  set: async(p,d)=>{
+    try{
+      const r=await fetch(`${FB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+      if(!r.ok){const t=await r.text();setConnStatus(false,'Write blocked: '+t.slice(0,60));return false;}
+      setConnStatus(true,'');return true;
+    }catch(e){setConnStatus(false,'Write error: '+e.message);return false;}
+  },
+  patch: async(p,d)=>{
+    try{
+      const r=await fetch(`${FB_URL}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+      if(!r.ok){const t=await r.text();setConnStatus(false,'Patch blocked: '+t.slice(0,60));return false;}
+      setConnStatus(true,'');return true;
+    }catch(e){setConnStatus(false,'Patch error: '+e.message);return false;}
+  },
+  del: async(p)=>{
+    try{
+      const r=await fetch(`${FB_URL}/${p}.json`,{method:'DELETE'});
+      if(!r.ok){setConnStatus(false,'Delete blocked');return false;}
+      setConnStatus(true,'');return true;
+    }catch(e){setConnStatus(false,'Delete error: '+e.message);return false;}
+  },
 };
+
+// Test connection on load
+(async()=>{
+  document.getElementById('connStatus').textContent='⏳ Connecting...';
+  await FB.get('_ping');
+  if(_fbOk===null)setConnStatus(true,'');
+})();
 
 const TIMER_SEC=()=>parseInt(document.getElementById('settingTimer').value)||30;
 const roll=(s)=>Math.floor(Math.random()*s)+1;
