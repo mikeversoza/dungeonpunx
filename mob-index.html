@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOBLIN RUSH — Join the Horde</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --goblin: #3a7a2a;
+  --goblin-bright: #6ed44e;
+  --goblin-dark: #1e3d14;
+  --gold: #e8bc3c;
+  --gold-bright: #f5c518;
+  --blood: #c0392b;
+  --blood-bright: #ff5540;
+  --stone: #7a7a8e;
+  --stone-light: #d0d0e4;
+  --parchment: #f8f0d8;
+  --sapphire: #4aabef;
+  --violet: #b47ad0;
+  --emerald: #3edc81;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0d07;
+  background-image:
+    radial-gradient(ellipse at 30% 0%, rgba(58,122,42,0.14) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 100%, rgba(192,57,43,0.08) 0%, transparent 55%);
+  color: var(--parchment);
+  font-family: 'Crimson Text', serif;
+  font-size: 18px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header {
+  width: 100%;
+  background: linear-gradient(180deg, #050805 0%, #0a0d07 100%);
+  border-bottom: 3px solid var(--goblin);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 30px rgba(58,122,42,0.25);
+}
+.logo { font-family:'Cinzel',serif; font-size:1.5rem; font-weight:900; color:var(--goblin-bright); letter-spacing:0.08em; text-shadow: 0 0 20px rgba(110,212,78,0.4); }
+
+.boss-hp-bar-wrap { flex:1; max-width:400px; margin:0 2rem; }
+.boss-hp-label { font-family:'Cinzel',serif; font-size:0.75rem; color:var(--blood-bright); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:3px; display:flex; justify-content:space-between; }
+.boss-hp-bg { height:14px; background:rgba(0,0,0,0.5); border:1px solid var(--blood); border-radius:2px; overflow:hidden; }
+.boss-hp-fill { height:100%; background:linear-gradient(90deg,#7b0000,var(--blood-bright)); transition:width 0.6s ease; }
+.phase-tag { font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:0.1em; padding:0.3rem 0.8rem; border:1px solid; text-transform:uppercase; }
+
+main { width:100%; max-width:700px; padding:1.5rem; flex:1; }
+
+/* JOIN */
+.join-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:70vh; text-align:center; gap:1.5rem; }
+.join-title { font-family:'Cinzel',serif; font-size:2rem; font-weight:900; color:var(--goblin-bright); text-shadow:0 0 30px rgba(110,212,78,0.3); }
+.join-subtitle { color:var(--stone-light); font-style:italic; font-size:1rem; }
+.join-box { background:rgba(8,12,6,0.9); border:2px solid var(--goblin); padding:2rem; width:100%; max-width:380px; box-shadow:0 0 40px rgba(58,122,42,0.2); }
+.code-input { background:rgba(0,0,0,0.6); border:2px solid rgba(58,122,42,0.5); color:var(--goblin-bright); font-family:'Cinzel',serif; font-size:2rem; letter-spacing:0.35em; text-align:center; padding:0.75rem; width:100%; outline:none; text-transform:uppercase; transition:border-color 0.2s; }
+.code-input:focus { border-color:var(--goblin-bright); }
+.code-error { color:var(--blood-bright); font-size:0.88rem; min-height:1.2rem; margin-top:0.4rem; }
+.region-picker { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; margin:1rem 0; }
+.region-btn { font-family:'Cinzel',serif; font-size:0.78rem; letter-spacing:0.08em; padding:0.7rem 0.4rem; border:2px solid rgba(58,122,42,0.35); background:transparent; color:var(--stone-light); cursor:pointer; transition:all 0.15s; text-transform:uppercase; }
+.region-btn:hover { border-color:var(--goblin); color:var(--goblin-bright); }
+.region-btn.selected { border-color:var(--goblin-bright); background:rgba(58,122,42,0.2); color:var(--goblin-bright); }
+.join-btn { width:100%; font-family:'Cinzel',serif; font-size:1rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.9rem; border:2px solid var(--goblin-bright); background:rgba(58,122,42,0.15); color:var(--goblin-bright); cursor:pointer; transition:all 0.15s; margin-top:0.5rem; }
+.join-btn:hover { background:rgba(58,122,42,0.3); }
+.join-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* PLAYER SCREEN */
+.player-screen { display:none; }
+.status-bar { background:rgba(0,0,0,0.4); border:1px solid rgba(58,122,42,0.3); padding:0.75rem 1rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+.goblin-id { font-family:'Cinzel',serif; font-size:0.9rem; color:var(--goblin-bright); letter-spacing:0.1em; }
+.region-tag { font-family:'Cinzel',serif; font-size:0.72rem; letter-spacing:0.1em; padding:0.2rem 0.7rem; border:1px solid; text-transform:uppercase; }
+.region-left { color:var(--sapphire); border-color:var(--sapphire); }
+.region-center { color:var(--gold); border-color:var(--gold); }
+.region-right { color:var(--violet); border-color:var(--violet); }
+
+.my-hp { background:rgba(0,0,0,0.4); border:1px solid rgba(58,122,42,0.25); padding:1rem; margin-bottom:1rem; display:flex; align-items:center; gap:1rem; }
+.my-hp-num { font-family:'Cinzel',serif; font-size:2.5rem; color:var(--goblin-bright); line-height:1; min-width:80px; }
+.my-hp-label { font-size:0.75rem; color:var(--stone-light); letter-spacing:0.1em; text-transform:uppercase; }
+.hp-bar-bg { height:12px; background:rgba(0,0,0,0.5); border:1px solid rgba(110,212,78,0.3); border-radius:1px; overflow:hidden; margin-top:4px; }
+.hp-bar-fill { height:100%; background:linear-gradient(90deg,var(--goblin-dark),var(--goblin-bright)); transition:width 0.5s ease; }
+
+.phase-display { text-align:center; padding:0.75rem; margin-bottom:1rem; font-family:'Cinzel',serif; font-size:0.9rem; letter-spacing:0.12em; text-transform:uppercase; border:1px solid; }
+.phase-boss { border-color:var(--blood); color:var(--blood-bright); background:rgba(192,57,43,0.1); }
+.phase-players { border-color:var(--goblin); color:var(--goblin-bright); background:rgba(58,122,42,0.1); }
+.phase-waiting { border-color:var(--stone); color:var(--stone-light); background:rgba(0,0,0,0.2); }
+.phase-break { border-color:var(--gold); color:var(--gold); background:rgba(232,188,60,0.08); }
+
+.timer-ring { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; border:3px solid var(--goblin); font-family:'Cinzel',serif; font-size:1.1rem; font-weight:700; color:var(--goblin-bright); transition:all 0.5s; background:rgba(0,0,0,0.4); }
+.timer-ring.urgent { border-color:var(--blood-bright); color:var(--blood-bright); animation:pulse 0.5s ease-in-out infinite alternate; }
+@keyframes pulse { from{transform:scale(1);}to{transform:scale(1.08);} }
+
+.action-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.75rem; margin-bottom:1.25rem; }
+.action-btn { font-family:'Cinzel',serif; font-size:0.88rem; letter-spacing:0.08em; text-transform:uppercase; padding:1.25rem 0.5rem; border:2px solid; background:transparent; cursor:pointer; transition:all 0.15s; display:flex; flex-direction:column; align-items:center; gap:0.4rem; }
+.action-btn .action-icon { font-size:1.8rem; }
+.action-btn .action-desc { font-size:0.68rem; color:var(--stone-light); letter-spacing:0.06em; font-family:'Crimson Text',serif; font-style:italic; text-transform:none; }
+.btn-attack { border-color:var(--blood-bright); color:var(--blood-bright); }
+.btn-attack:hover,.btn-attack.selected { background:rgba(192,57,43,0.2); box-shadow:0 0 12px rgba(192,57,43,0.3); }
+.btn-defend { border-color:var(--sapphire); color:var(--sapphire); }
+.btn-defend:hover,.btn-defend.selected { background:rgba(74,171,239,0.2); box-shadow:0 0 12px rgba(74,171,239,0.3); }
+.btn-heal { border-color:var(--emerald); color:var(--emerald); }
+.btn-heal:hover,.btn-heal.selected { background:rgba(62,220,129,0.2); box-shadow:0 0 12px rgba(62,220,129,0.3); }
+.action-btn:disabled { opacity:0.35; cursor:not-allowed; }
+.action-btn.selected { opacity:1 !important; }
+
+.defend-bonus-badge { background:rgba(74,171,239,0.15); border:1px solid rgba(74,171,239,0.4); color:var(--sapphire); font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:0.1em; padding:0.3rem 0.75rem; text-align:center; margin-bottom:0.75rem; display:none; }
+
+.confirm-btn { width:100%; font-family:'Cinzel',serif; font-size:1rem; letter-spacing:0.15em; text-transform:uppercase; padding:1rem; border:2px solid var(--goblin-bright); background:rgba(58,122,42,0.2); color:var(--goblin-bright); cursor:pointer; transition:all 0.15s; margin-bottom:1rem; }
+.confirm-btn:hover:not(:disabled) { background:rgba(58,122,42,0.4); box-shadow:0 0 20px rgba(110,212,78,0.3); }
+.confirm-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.confirm-btn.submitted { border-color:var(--emerald); color:var(--emerald); background:rgba(62,220,129,0.1); }
+
+.horde-overview { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; margin-bottom:1rem; }
+.horde-zone { background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); padding:0.5rem; text-align:center; }
+.horde-zone-label { font-family:'Cinzel',serif; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:0.3rem; }
+.horde-zone-count { font-family:'Cinzel',serif; font-size:1.3rem; }
+
+.battle-log { background:rgba(0,0,0,0.4); border:1px solid rgba(58,122,42,0.2); padding:0.75rem; max-height:200px; overflow-y:auto; }
+.log-entry { font-size:0.85rem; padding:0.25rem 0.4rem; border-left:2px solid transparent; margin-bottom:0.2rem; line-height:1.5; }
+.log-entry.damage { border-color:var(--blood-bright); color:#ffc8c0; }
+.log-entry.action { border-color:var(--goblin-bright); color:#c8ffcc; }
+.log-entry.info { border-color:var(--stone); color:var(--stone-light); }
+.log-entry.heal { border-color:var(--emerald); color:#b0ffd0; }
+.log-entry.boss { border-color:var(--gold); color:#ffeaa0; }
+
+/* DEATH REVIVAL SCREEN */
+.revival-screen { display:none; text-align:center; padding:2rem 1rem; }
+.revival-screen h2 { font-family:'Cinzel',serif; font-size:1.8rem; color:var(--blood-bright); margin-bottom:0.75rem; }
+.revival-chances { display:flex; justify-content:center; gap:0.5rem; margin:1.5rem 0; }
+.chance-dot { width:20px; height:20px; border-radius:50%; border:2px solid var(--goblin-bright); background:rgba(58,122,42,0.3); transition:all 0.3s; }
+.chance-dot.used { border-color:var(--blood); background:var(--blood); }
+.revival-roll-btn { font-family:'Cinzel',serif; font-size:1rem; letter-spacing:0.15em; text-transform:uppercase; padding:1rem 2.5rem; border:2px solid var(--goblin-bright); background:rgba(58,122,42,0.2); color:var(--goblin-bright); cursor:pointer; transition:all 0.15s; margin:0.5rem; }
+.revival-roll-btn:hover { background:rgba(58,122,42,0.4); }
+.revival-roll-btn.advantage { border-color:var(--gold); color:var(--gold); background:rgba(232,188,60,0.1); }
+.revival-roll-btn:disabled { opacity:0.35; cursor:not-allowed; }
+.revival-result { font-family:'Cinzel',serif; font-size:2.5rem; margin:1rem 0; min-height:3rem; }
+
+.dead-screen { text-align:center; padding:3rem 1rem; display:none; }
+.dead-screen h2 { font-family:'Cinzel',serif; font-size:2rem; color:var(--blood-bright); margin-bottom:1rem; }
+
+/* VICTORY POPUP */
+.victory-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; display:none; align-items:center; justify-content:center; padding:1.5rem; backdrop-filter:blur(4px); }
+.victory-box { background:linear-gradient(135deg, #0a1a06, #061006); border:3px solid var(--goblin-bright); padding:2.5rem 2rem; max-width:540px; width:100%; text-align:center; box-shadow:0 0 80px rgba(110,212,78,0.35); animation:victoryPop 0.5s ease-out; }
+@keyframes victoryPop { from{transform:scale(0.8);opacity:0;} to{transform:scale(1);opacity:1;} }
+.victory-box h2 { font-family:'Cinzel',serif; font-size:2.2rem; color:var(--goblin-bright); margin-bottom:0.5rem; text-shadow:0 0 30px rgba(110,212,78,0.5); }
+.victory-box .sub { color:var(--stone-light); font-style:italic; margin-bottom:2rem; }
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.5rem; text-align:left; }
+.stat-item { background:rgba(0,0,0,0.4); border:1px solid rgba(110,212,78,0.2); padding:0.75rem; }
+.stat-label { font-family:'Cinzel',serif; font-size:0.65rem; letter-spacing:0.1em; color:var(--stone-light); text-transform:uppercase; margin-bottom:0.2rem; }
+.stat-value { font-family:'Cinzel',serif; font-size:1.4rem; color:var(--goblin-bright); }
+.zone-stats { margin-bottom:1.5rem; }
+.zone-stat-row { display:flex; align-items:center; gap:0.75rem; padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.88rem; }
+.zone-stat-label { min-width:90px; font-family:'Cinzel',serif; font-size:0.75rem; }
+.zone-stat-bar { flex:1; height:8px; background:rgba(0,0,0,0.4); border-radius:1px; overflow:hidden; }
+.zone-stat-fill { height:100%; transition:width 0.6s ease; }
+.zone-stat-num { min-width:50px; text-align:right; color:var(--parchment); font-family:'Cinzel',serif; font-size:0.85rem; }
+.victory-close-btn { font-family:'Cinzel',serif; font-size:0.9rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.8rem 2rem; border:2px solid var(--goblin-bright); background:rgba(58,122,42,0.2); color:var(--goblin-bright); cursor:pointer; transition:all 0.15s; }
+.victory-close-btn:hover { background:rgba(58,122,42,0.4); }
+
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:#050805; }
+::-webkit-scrollbar-thumb { background:var(--goblin); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚔ GOBLIN RUSH</div>
+  <div class="boss-hp-bar-wrap">
+    <div class="boss-hp-label"><span>THE BOSS</span><span id="bossHPText">???</span></div>
+    <div class="boss-hp-bg"><div class="boss-hp-fill" id="bossHPFill" style="width:100%"></div></div>
+  </div>
+  <div><div class="phase-tag" id="phaseTag" style="color:var(--stone-light);border-color:var(--stone)">WAITING</div></div>
+</header>
+
+<main>
+  <!-- JOIN -->
+  <div class="join-screen" id="joinScreen">
+    <div style="font-size:3rem">⚔️</div>
+    <div class="join-title">JOIN THE HORDE</div>
+    <div class="join-subtitle">Choose your code and pick your flank. Then charge!</div>
+    <div style="font-size:0.85rem;color:var(--stone-light)"><a href="landing.html" style="color:var(--goblin-bright);text-decoration:none">← How to play</a></div>
+
+    <div class="join-box">
+      <label style="font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--stone-light);text-transform:uppercase;display:block;margin-bottom:0.5rem">Your 4-character code</label>
+      <input type="text" class="code-input" id="codeInput" maxlength="4" placeholder="GRRR" oninput="this.value=this.value.toUpperCase()">
+      <div class="code-error" id="codeError"></div>
+
+      <div style="font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.1em;color:var(--stone-light);text-transform:uppercase;margin:1rem 0 0.5rem">Choose your flank</div>
+      <div class="region-picker">
+        <button class="region-btn" onclick="selectRegion('left',this)">⬅ Left</button>
+        <button class="region-btn" onclick="selectRegion('center',this)">🎯 Center</button>
+        <button class="region-btn" onclick="selectRegion('right',this)">Right ➡</button>
+      </div>
+
+      <button class="join-btn" id="joinBtn" onclick="joinHorde()" disabled>⚔ CHARGE INTO BATTLE</button>
+    </div>
+
+    <div id="waitingPlayers" style="font-size:0.85rem;color:var(--stone-light);font-style:italic"></div>
+  </div>
+
+  <!-- PLAYER SCREEN -->
+  <div class="player-screen" id="playerScreen">
+    <div class="status-bar">
+      <div>
+        <div class="goblin-id">⚔️ <span id="myCode"></span></div>
+        <div style="font-size:0.75rem;color:var(--stone-light);margin-top:2px">Round <span id="roundNum">1</span></div>
+      </div>
+      <div id="myRegionTag" class="region-tag region-center">Center</div>
+      <div style="text-align:right">
+        <div style="font-size:0.72rem;color:var(--stone-light);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Timer</div>
+        <div class="timer-ring" id="timerRing">—</div>
+      </div>
+    </div>
+
+    <div class="my-hp" id="myHPDisplay">
+      <div>
+        <div class="my-hp-num" id="myHPNum">20</div>
+        <div class="my-hp-label">HP / 20</div>
+        <div class="hp-bar-bg" style="width:120px"><div class="hp-bar-fill" id="myHPBar" style="width:100%"></div></div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:0.8rem;color:var(--stone-light);margin-bottom:0.25rem">Status</div>
+        <div id="myStatus" style="font-size:0.9rem;color:var(--parchment)">Ready for battle</div>
+        <div style="margin-top:0.25rem;font-size:0.78rem;color:var(--stone-light)" id="myStatsLine"></div>
+      </div>
+    </div>
+
+    <div class="phase-display phase-waiting" id="phaseDisplay">Waiting for battle to begin...</div>
+
+    <div class="horde-overview" id="hordeOverview">
+      <div class="horde-zone"><div class="horde-zone-label" style="color:var(--sapphire)">⬅ Left</div><div class="horde-zone-count" id="leftCount">0</div><div style="font-size:0.68rem;color:var(--stone-light)">goblins</div></div>
+      <div class="horde-zone"><div class="horde-zone-label" style="color:var(--gold)">🎯 Center</div><div class="horde-zone-count" id="centerCount">0</div><div style="font-size:0.68rem;color:var(--stone-light)">goblins</div></div>
+      <div class="horde-zone"><div class="horde-zone-label" style="color:var(--violet)">Right ➡</div><div class="horde-zone-count" id="rightCount">0</div><div style="font-size:0.68rem;color:var(--stone-light)">goblins</div></div>
+    </div>
+
+    <div class="defend-bonus-badge" id="defendBonus">🛡→⚔ +3 ATTACK BONUS — You defended last round!</div>
+
+    <div class="action-grid">
+      <button class="action-btn btn-attack" id="btnAttack" onclick="selectAction('attack')">
+        <span class="action-icon">⚔️</span><span>Attack</span>
+        <span class="action-desc">1d6 dmg (+3 if defended)</span>
+      </button>
+      <button class="action-btn btn-defend" id="btnDefend" onclick="selectAction('defend')">
+        <span class="action-icon">🛡️</span><span>Defend</span>
+        <span class="action-desc">Half damage this round</span>
+      </button>
+      <button class="action-btn btn-heal" id="btnHeal" onclick="selectAction('heal')">
+        <span class="action-icon">💚</span><span>Heal</span>
+        <span class="action-desc">Restore 1d4 HP</span>
+      </button>
+    </div>
+
+    <button class="confirm-btn" id="confirmBtn" onclick="confirmAction()" disabled>SELECT AN ACTION</button>
+
+    <div style="font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.1em;color:var(--stone-light);text-transform:uppercase;margin-bottom:0.4rem">Battle Log</div>
+    <div class="battle-log" id="battleLog"><div class="log-entry info">Waiting for battle to start...</div></div>
+  </div>
+
+  <!-- REVIVAL SCREEN -->
+  <div class="revival-screen" id="revivalScreen">
+    <div style="font-size:3rem;margin-bottom:0.5rem">💀</div>
+    <h2>YOU HAVE FALLEN</h2>
+    <p style="color:var(--stone-light);margin-bottom:1rem;font-size:0.95rem">Roll to get back up! You have <span id="chancesLeft">3</span> chances.</p>
+    <div class="revival-chances" id="revivalChances">
+      <div class="chance-dot" id="dot0"></div>
+      <div class="chance-dot" id="dot1"></div>
+      <div class="chance-dot" id="dot2"></div>
+    </div>
+    <div id="advantageNote" style="font-size:0.85rem;color:var(--gold);margin-bottom:0.75rem;display:none">✨ A zone-mate healed — you have ADVANTAGE on this roll!</div>
+    <div class="revival-result" id="revivalResult"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+      <button class="revival-roll-btn" id="rollReviveBtn" onclick="rollRevival()">🎲 Roll to Revive</button>
+      <button class="revival-roll-btn advantage" id="rollAdvantageBtn" onclick="rollRevivalAdvantage()" style="display:none">🎲🎲 Roll with Advantage</button>
+    </div>
+    <p style="font-size:0.82rem;color:var(--stone-light);margin-top:1.5rem;font-style:italic">Need 10 or higher on a d20 to get back up.</p>
+  </div>
+
+  <!-- DEAD SCREEN -->
+  <div class="dead-screen" id="deadScreen">
+    <div style="font-size:4rem;margin-bottom:1rem">💀</div>
+    <h2 style="font-family:'Cinzel',serif;font-size:2rem;color:var(--blood-bright);margin-bottom:1rem;">YOU HAVE FALLEN</h2>
+    <p style="color:var(--stone-light);margin-bottom:1.5rem">The boss struck you down, little goblin. All three revival chances spent.</p>
+    <p style="font-size:0.9rem;color:var(--stone-light)">You can still watch the battle unfold...</p>
+  </div>
+</main>
+
+<!-- VICTORY POPUP -->
+<div class="victory-overlay" id="victoryOverlay">
+  <div class="victory-box">
+    <div style="font-size:3.5rem;margin-bottom:0.5rem">🎉</div>
+    <h2>THE BOSS FALLS!</h2>
+    <div class="sub">The horde is victorious! WAAAGH!</div>
+
+    <div class="stats-grid" id="myStatsGrid"></div>
+
+    <div style="font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.12em;color:var(--stone-light);text-transform:uppercase;margin-bottom:0.75rem">Zone Damage Breakdown</div>
+    <div class="zone-stats" id="zoneStatsDisplay"></div>
+
+    <button class="victory-close-btn" onclick="document.getElementById('victoryOverlay').style.display='none'">Close</button>
+    <div style="margin-top:1rem"><button onclick="location.reload()" style="font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.1em;padding:0.5rem 1.2rem;border:1px solid rgba(110,212,78,0.3);background:transparent;color:var(--stone-light);cursor:pointer">Play Again</button></div>
+  </div>
+</div>
+
+<script>
+const FB_URL = 'https://dungeon-8db6b-default-rtdb.firebaseio.com/goblinrush';
+const FB = {
+  get: async(p)=>{ try{const r=await fetch(`${FB_URL}/${p}.json`);return r.ok?r.json():null;}catch{return null;}},
+  set: async(p,d)=>{ try{await fetch(`${FB_URL}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return true;}catch{return false;}},
+  push: async(p,d)=>{ try{const r=await fetch(`${FB_URL}/${p}.json`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return r.ok?r.json():null;}catch{return null;}},
+  patch: async(p,d)=>{ try{await fetch(`${FB_URL}/${p}.json`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});return true;}catch{return false;}},
+};
+
+let myCode=null, myRegion=null, myFbKey=null;
+let selectedAction=null, actionSubmitted=false, lastAction='attack';
+let gameState=null, timerInterval=null, pollInterval=null;
+let myHP=20, myMaxHP=20;
+let revivalChancesUsed=0, inRevival=false;
+let hasAdvantage=false;
+let myDmgDealt=0, myHealGiven=0;
+let victoryShown=false;
+
+const MAX_HP=20;
+
+// JOIN
+function selectRegion(region,btn) {
+  myRegion=region;
+  document.querySelectorAll('.region-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  checkJoinReady();
+}
+document.getElementById('codeInput').addEventListener('input',checkJoinReady);
+function checkJoinReady(){
+  const code=document.getElementById('codeInput').value.trim();
+  document.getElementById('joinBtn').disabled=!(code.length===4&&myRegion);
+}
+
+async function joinHorde(){
+  const code=document.getElementById('codeInput').value.trim().toUpperCase();
+  if(code.length!==4){document.getElementById('codeError').textContent='Code must be exactly 4 characters.';return;}
+  if(!myRegion){document.getElementById('codeError').textContent='Pick a flank first.';return;}
+  document.getElementById('joinBtn').disabled=true;
+  document.getElementById('codeError').textContent='';
+  const existing=await FB.get('players');
+  if(existing){
+    const taken=Object.values(existing).find(p=>p.code===code&&p.alive);
+    if(taken){document.getElementById('codeError').textContent=`"${code}" is already taken.`;document.getElementById('joinBtn').disabled=false;return;}
+  }
+  const playerData={code,region:myRegion,hp:MAX_HP,maxHP:MAX_HP,alive:true,lastAction:'attack',currentAction:null,actionSubmitted:false,joinedAt:Date.now(),dmgDealt:0,healGiven:0,revivalChances:3};
+  const result=await FB.push('players',playerData);
+  myFbKey=result?.name; myCode=code; myHP=MAX_HP;
+  document.getElementById('joinScreen').style.display='none';
+  document.getElementById('playerScreen').style.display='block';
+  document.getElementById('myCode').textContent=code;
+  const regionEl=document.getElementById('myRegionTag');
+  regionEl.textContent={left:'⬅ Left',center:'🎯 Center',right:'Right ➡'}[myRegion];
+  regionEl.className=`region-tag region-${myRegion}`;
+  startPolling();
+}
+
+// POLLING
+function startPolling(){poll();pollInterval=setInterval(poll,1500);}
+
+async function poll(){
+  if(!myFbKey)return;
+  const[gs,me,allPlayers]=await Promise.all([FB.get('gameState'),FB.get(`players/${myFbKey}`),FB.get('players')]);
+  gameState=gs;
+  if(me){
+    myHP=me.hp; lastAction=me.lastAction||'attack';
+    actionSubmitted=me.actionSubmitted||false;
+    myDmgDealt=me.dmgDealt||0; myHealGiven=me.healGiven||0;
+    revivalChancesUsed=MAX_HP-me.revivalChances||0;
+    updateMyHP();
+    const showDefendBonus=me.lastAction==='defend'&&gs?.status==='player_turn';
+    document.getElementById('defendBonus').style.display=showDefendBonus?'block':'none';
+    document.getElementById('myStatsLine').textContent=`DMG: ${myDmgDealt} · Healed: ${myHealGiven}`;
+    if(!me.alive&&!inRevival&&me.revivalChances>0){
+      startRevival(me,allPlayers);
+    } else if(!me.alive&&me.revivalChances<=0){
+      document.getElementById('revivalScreen').style.display='none';
+      document.getElementById('playerScreen').style.display='none';
+      document.getElementById('deadScreen').style.display='block';
+    }
+  }
+  updateBossDisplay(gs);
+  updatePhaseDisplay(gs);
+  updateHordeOverview(allPlayers);
+  updateLog(gs?.log);
+  updateRoundNum(gs);
+  if(gs?.status==='players_won'&&!victoryShown){
+    victoryShown=true; clearInterval(pollInterval);
+    showVictoryPopup(gs,allPlayers);
+  }
+  if(gs?.status==='boss_won'){clearInterval(pollInterval);}
+}
+
+// UI
+function updateBossDisplay(gs){
+  if(!gs)return;
+  const hp=gs.bossHP??100,maxHP=gs.bossMaxHP??100;
+  const pct=Math.max(0,(hp/maxHP)*100);
+  document.getElementById('bossHPText').textContent=`${hp} / ${maxHP}`;
+  document.getElementById('bossHPFill').style.width=pct+'%';
+}
+
+function updatePhaseDisplay(gs){
+  const pd=document.getElementById('phaseDisplay'),pt=document.getElementById('phaseTag');
+  if(!gs||!gs.status||gs.status==='waiting'){
+    pd.textContent='Waiting for the boss to begin...'; pd.className='phase-display phase-waiting';
+    pt.textContent='WAITING'; pt.style.cssText='color:var(--stone-light);border-color:var(--stone)';
+    setActionsEnabled(false); stopTimer(); return;
+  }
+  if(gs.status==='break'){
+    pd.textContent='⏸ BREAK TIME — The boss has called a pause.'; pd.className='phase-display phase-break';
+    pt.textContent='BREAK'; pt.style.cssText='color:var(--gold);border-color:var(--gold)';
+    setActionsEnabled(false); stopTimer(); return;
+  }
+  if(gs.status==='boss_turn'){
+    pd.textContent='💀 THE BOSS IS ACTING... BRACE YOURSELVES!'; pd.className='phase-display phase-boss';
+    pt.textContent='BOSS TURN'; pt.style.cssText='color:var(--blood-bright);border-color:var(--blood)';
+    setActionsEnabled(false); stopTimer();
+  } else if(gs.status==='player_turn'){
+    pd.textContent=actionSubmitted?'✓ Action submitted! Waiting for others...':'⚔ YOUR TURN — Choose and confirm your action!';
+    pd.className='phase-display phase-players';
+    pt.textContent='YOUR TURN'; pt.style.cssText='color:var(--goblin-bright);border-color:var(--goblin)';
+    if(!actionSubmitted){setActionsEnabled(true);startTimer(gs.turnDeadline);}
+    else{setActionsEnabled(false);stopTimer();}
+  }
+}
+
+function updateMyHP(){
+  const pct=Math.max(0,(myHP/MAX_HP)*100);
+  document.getElementById('myHPNum').textContent=myHP;
+  document.getElementById('myHPBar').style.width=pct+'%';
+  document.getElementById('myHPBar').style.background=pct>50?'linear-gradient(90deg,#1e3d14,var(--goblin-bright))':pct>25?'linear-gradient(90deg,#5a4a00,var(--gold))':'linear-gradient(90deg,#5a0a0a,var(--blood-bright))';
+}
+
+function updateHordeOverview(allPlayers){
+  if(!allPlayers)return;
+  const players=Object.values(allPlayers).filter(p=>p.alive);
+  document.getElementById('leftCount').textContent=players.filter(p=>p.region==='left').length;
+  document.getElementById('centerCount').textContent=players.filter(p=>p.region==='center').length;
+  document.getElementById('rightCount').textContent=players.filter(p=>p.region==='right').length;
+  const total=players.length,submitted=players.filter(p=>p.actionSubmitted).length;
+  document.getElementById('myStatus').textContent=gameState?.status==='player_turn'?`${submitted}/${total} goblins ready`:`${total} goblins in the horde`;
+}
+
+function updateLog(log){
+  if(!log)return;
+  const entries=Array.isArray(log)?log:Object.values(log);
+  const el=document.getElementById('battleLog');
+  el.innerHTML=entries.slice(-20).reverse().map(e=>`<div class="log-entry ${e.type||'info'}">${e.text}</div>`).join('')||'<div class="log-entry info">Awaiting battle...</div>';
+}
+
+function updateRoundNum(gs){if(gs?.round)document.getElementById('roundNum').textContent=gs.round;}
+
+// ACTIONS
+function selectAction(action){
+  if(actionSubmitted)return;
+  selectedAction=action;
+  ['attack','defend','heal'].forEach(a=>document.getElementById(`btn${a.charAt(0).toUpperCase()+a.slice(1)}`).classList.toggle('selected',a===action));
+  document.getElementById('confirmBtn').disabled=false;
+  document.getElementById('confirmBtn').textContent=`CONFIRM: ${action.toUpperCase()}`;
+  document.getElementById('confirmBtn').classList.remove('submitted');
+}
+
+async function confirmAction(){
+  if(!selectedAction||actionSubmitted||!myFbKey)return;
+  actionSubmitted=true;
+  await FB.patch(`players/${myFbKey}`,{currentAction:selectedAction,lastAction:selectedAction,actionSubmitted:true});
+  document.getElementById('confirmBtn').textContent='✓ ACTION SUBMITTED';
+  document.getElementById('confirmBtn').classList.add('submitted');
+  document.getElementById('confirmBtn').disabled=true;
+  setActionsEnabled(false);
+  stopTimer();
+}
+
+function setActionsEnabled(enabled){
+  ['btnAttack','btnDefend','btnHeal'].forEach(id=>{document.getElementById(id).disabled=!enabled;});
+  if(!enabled&&!actionSubmitted){
+    document.getElementById('confirmBtn').disabled=true;
+    document.getElementById('confirmBtn').textContent='WAITING...';
+  }
+}
+
+// TIMER
+function startTimer(deadline){
+  stopTimer();
+  if(!deadline)return;
+  timerInterval=setInterval(()=>{
+    const rem=Math.max(0,Math.ceil((deadline-Date.now())/1000));
+    const ring=document.getElementById('timerRing');
+    ring.textContent=rem; ring.classList.toggle('urgent',rem<=10);
+    if(rem<=0){stopTimer();if(!actionSubmitted){selectedAction=lastAction;confirmAction();}}
+  },500);
+}
+
+function stopTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+  const ring=document.getElementById('timerRing');
+  ring.textContent='—'; ring.classList.remove('urgent');
+}
+
+// REVIVAL
+async function startRevival(me, allPlayers){
+  if(inRevival)return;
+  inRevival=true;
+  document.getElementById('playerScreen').style.display='none';
+  document.getElementById('revivalScreen').style.display='block';
+  const chances=me.revivalChances||3;
+  const used=3-chances;
+  for(let i=0;i<3;i++)document.getElementById(`dot${i}`).className='chance-dot'+(i<used?' used':'');
+  document.getElementById('chancesLeft').textContent=chances;
+  // Check if zone-mate healed last round
+  const zoneHeal=allPlayers?Object.values(allPlayers).some(p=>p.alive&&p.region===myRegion&&p.lastAction==='heal'):false;
+  hasAdvantage=zoneHeal;
+  document.getElementById('advantageNote').style.display=zoneHeal?'block':'none';
+  document.getElementById('rollReviveBtn').style.display='inline-block';
+  document.getElementById('rollAdvantageBtn').style.display=zoneHeal?'inline-block':'none';
+  document.getElementById('revivalResult').textContent='';
+}
+
+function rollD20(){return Math.floor(Math.random()*20)+1;}
+
+async function rollRevival(){await doRevival(false);}
+async function rollRevivalAdvantage(){await doRevival(true);}
+
+async function doRevival(advantage){
+  document.getElementById('rollReviveBtn').disabled=true;
+  document.getElementById('rollAdvantageBtn').disabled=true;
+  const r1=rollD20();
+  const r2=advantage?rollD20():null;
+  const result=advantage?Math.max(r1,r2):r1;
+  const success=result>=10;
+  let resText=advantage?`${r1} vs ${r2} → ${result}`:String(result);
+  document.getElementById('revivalResult').innerHTML=`<span style="color:${success?'var(--goblin-bright)':'var(--blood-bright)'}">${resText}</span>`;
+  await new Promise(r=>setTimeout(r,800));
+
+  const me=await FB.get(`players/${myFbKey}`);
+  const newChances=(me?.revivalChances||3)-1;
+  if(success){
+    await FB.patch(`players/${myFbKey}`,{alive:true,hp:5,revivalChances:newChances});
+    document.getElementById('revivalScreen').style.display='none';
+    document.getElementById('playerScreen').style.display='block';
+    inRevival=false;
+    myHP=5; updateMyHP();
+  } else {
+    await FB.patch(`players/${myFbKey}`,{revivalChances:newChances});
+    const dot=document.getElementById(`dot${3-newChances-1}`);
+    if(dot)dot.className='chance-dot used';
+    document.getElementById('chancesLeft').textContent=newChances;
+    if(newChances<=0){
+      await FB.patch(`players/${myFbKey}`,{alive:false,revivalChances:0});
+      document.getElementById('revivalScreen').style.display='none';
+      document.getElementById('deadScreen').style.display='block';
+    } else {
+      document.getElementById('rollReviveBtn').disabled=false;
+      if(hasAdvantage)document.getElementById('rollAdvantageBtn').disabled=false;
+      document.getElementById('revivalResult').innerHTML+=`<div style="font-size:0.85rem;color:var(--stone-light);margin-top:0.4rem">${newChances} chance${newChances!==1?'s':''} remaining</div>`;
+    }
+  }
+}
+
+// VICTORY POPUP
+async function showVictoryPopup(gs, allPlayers){
+  const players=allPlayers?Object.values(allPlayers):[];
+  const me=players.find(p=>p.code===myCode)||{};
+  const zoneDmg={left:0,center:0,right:0};
+  players.forEach(p=>{if(p.region&&zoneDmg[p.region]!==undefined)zoneDmg[p.region]+=(p.dmgDealt||0);});
+  const maxZoneDmg=Math.max(1,...Object.values(zoneDmg));
+  const zoneColors={left:'var(--sapphire)',center:'var(--gold)',right:'var(--violet)'};
+  const zoneNames={left:'⬅ Left',center:'🎯 Center',right:'Right ➡'};
+
+  document.getElementById('myStatsGrid').innerHTML=`
+    <div class="stat-item"><div class="stat-label">Your Damage</div><div class="stat-value">${me.dmgDealt||0}</div></div>
+    <div class="stat-item"><div class="stat-label">Healing Done</div><div class="stat-value">${me.healGiven||0}</div></div>
+    <div class="stat-item"><div class="stat-label">Total Party Dmg</div><div class="stat-value">${players.reduce((s,p)=>s+(p.dmgDealt||0),0)}</div></div>
+    <div class="stat-item"><div class="stat-label">Survivors</div><div class="stat-value">${players.filter(p=>p.alive).length}/${players.length}</div></div>
+  `;
+  document.getElementById('zoneStatsDisplay').innerHTML=Object.entries(zoneDmg).map(([z,d])=>`
+    <div class="zone-stat-row">
+      <div class="zone-stat-label" style="color:${zoneColors[z]}">${zoneNames[z]}</div>
+      <div class="zone-stat-bar"><div class="zone-stat-fill" style="width:${(d/maxZoneDmg)*100}%;background:${zoneColors[z]}"></div></div>
+      <div class="zone-stat-num">${d} dmg</div>
+    </div>`).join('');
+
+  document.getElementById('victoryOverlay').style.display='flex';
+}
+
+// JOIN SCREEN UPDATE
+async function updateWaiting(){
+  const existing=await FB.get('players');
+  if(!existing)return;
+  const alive=Object.values(existing).filter(p=>p.alive);
+  document.getElementById('waitingPlayers').textContent=alive.length?`${alive.length} goblin${alive.length===1?'':'s'} already in the horde`:'';
+}
+updateWaiting();
+setInterval(updateWaiting,3000);
+</script>
+</body>
+</html>
